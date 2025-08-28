@@ -1,17 +1,25 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
+import 'package:meralda_gold_user/model/customerModel.dart';
+import 'package:meralda_gold_user/web/helperWidget.dart/rightProfile.dart';
+import 'package:meralda_gold_user/web/webHome.dart';
+import 'package:meralda_gold_user/web/webProfile.dart';
 import 'package:provider/provider.dart';
 import 'package:meralda_gold_user/common/colo_extension.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../providers/account_provider.dart';
 import '../providers/collectionProvider.dart';
 import '../providers/transaction.dart';
+import '../providers/user.dart';
+import 'helperWidget.dart/leftProfile.dart';
+import 'webTransaction.dart';
 
 class WebPayAmountScreen extends StatefulWidget {
   final String? userid;
-
   final Map? user;
   final String? custName;
 
@@ -26,12 +34,15 @@ class WebPayAmountScreen extends StatefulWidget {
   _WebPayAmountScreenState createState() => _WebPayAmountScreenState();
 }
 
-class _WebPayAmountScreenState extends State<WebPayAmountScreen> {
+class _WebPayAmountScreenState extends State<WebPayAmountScreen>
+    with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   DateTime? selectedDate;
   DateTime now = DateTime.now();
   bool _isLoading = false;
   String selectedValue = 'Gold';
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
 
   // Controllers
   TextEditingController taxCntrl = TextEditingController();
@@ -55,428 +66,283 @@ class _WebPayAmountScreenState extends State<WebPayAmountScreen> {
     staffId: '',
     gramPriceInvestDay: 0,
     gramWeight: 0,
-    branch: 0, merchentTransactionId: "", transactionMode: 'Direct',
-    // staffName: '', staffNameonId: '',
-    // staffName: '',
+    branch: 0,
+    merchentTransactionId: "",
+    transactionMode: 'Direct',
   );
 
   @override
   void initState() {
     super.initState();
-    _initializeData();
-  }
-
-  void _initializeData() {
-    // Set initial values based on scheme type
-    if (widget.user!["schemeType"] == "Wishlist") {
-      amountCntrl.text = "2000";
-    } else {
-      amountCntrl.text = "5000";
-    }
-
-    // Set tax and AMC if available
-    taxCntrl.text = widget.user!["tax"]?.toString() ?? '0';
-    amcCntrl.text = widget.user!["amc"]?.toString() ?? '0';
-    grampPerdayController.text = '0.0';
-
-    // Initialize transaction model
-    _transaction = TransactionModel(
-      customerName: widget.custName!,
-      customerId: widget.userid!,
-      date: DateTime.now(),
-      amount: double.parse(amountCntrl.text),
-      transactionType: 0,
-      note: '',
-      invoiceNo: '',
-      category: selectedValue,
-      discount: 0,
-      staffId: '', // Will be set from shared preferences
-      gramPriceInvestDay: 0,
-      gramWeight: 0,
-      branch: 0,
-      merchentTransactionId: "", transactionMode: 'Direct', id: '',
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 1200),
+      vsync: this,
     );
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeInOut,
+    ));
+    getUserAccount();
+
+    _animationController.forward();
   }
 
-  Future<void> _selectDate(BuildContext context) async {
-    final pickedDate = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime(2000),
-      lastDate: DateTime.now(),
-    );
-
-    if (pickedDate != null) {
-      setState(() {
-        selectedDate = pickedDate;
-      });
-    }
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
   }
 
-  // var _collection = CollectionModel(
-  //   staffId: '',
-  //   staffname: '',
-  //   recievedAmount: 0,
-  //   paidAmount: 0,
-  //   balance: 0,
-  //   date: DateTime.now(),
-  //   type: 0,
-  //   branch: "",
-  // );
-  Future<void> _saveForm() async {
-    if (!_formKey.currentState!.validate()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Please fill all required fields correctly!'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
-    _formKey.currentState!.save();
-
-    // Additional validation for non-Wishlist schemes
-    if (widget.user!["schemeType"] != "Wishlist" &&
-        double.parse(amountCntrl.text) < 5000) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Minimum amount required is 5000 for this scheme'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
-    setState(() => _isLoading = true);
-
-    try {
-      // Get staff info from shared preferences
-      final prefs = await SharedPreferences.getInstance();
-
-      // Update transaction with staff details
-      // _transaction = _transaction.copyWith(
-      //   staffId: staffDetails['id'],
-      //   staffName: staffDetails['staffName'],
-      //   date: selectedDate ?? DateTime.now(),
-      // );
-
-      // Save transaction
-      final transactionProvider =
-          Provider.of<TransactionProvider>(context, listen: false);
-      final data = await transactionProvider.createDirect(_transaction, 0, 0);
-
-      // Create collection record
-      // _collection = CollectionModel(
-      //     staffId: _collection.staffId,
-      //     staffname: _collection.staffname,
-      //     recievedAmount: _transaction.amount,
-      //     paidAmount: _collection.paidAmount,
-      //     balance: _collection.balance,
-      //     date: selectedDate ?? DateTime.now(),
-      //     type: 0,
-      //     branch: "");
-
-      // await Provider.of<CollectionProvider>(context, listen: false)
-      //     .create(_collection, data[3]);
-
-      // Show success message
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Payment recorded successfully!"),
-          backgroundColor: Colors.green,
-        ),
-      );
-
-      // Close screen if needed
-      Navigator.of(context).pop(true);
-    } catch (err) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error saving payment: $err'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    } finally {
-      setState(() => _isLoading = false);
-    }
+  bool isTransaFirst = false;
+  TransactionProvider? db;
+  User? dbUser;
+  List transactions = [];
+  double cashBalance = 0;
+  double gramBalance = 0;
+  getTransaction() {
+    db = TransactionProvider();
+    dbUser = User();
+    db!.initiliase();
+    print(widget.user!['id']);
+    db!.read(widget.user!['id']).then((value) {
+      if (value!.isEmpty) {
+        setState(() {
+          isTransaFirst = false;
+        });
+      } else {
+        setState(() {
+          cashBalance = value![1];
+          gramBalance = value![2];
+          isTransaFirst = true;
+        });
+      }
+    });
   }
 
-  Widget _buildFormField({
-    required String label,
-    required TextEditingController controller,
-    bool isRequired = true,
-    bool isReadOnly = false,
-    TextInputType keyboardType = TextInputType.text,
-    String? hintText,
-    Widget? suffixIcon,
-    String? Function(String?)? validator,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: Colors.grey[700],
-            ),
-          ),
-          SizedBox(height: 8),
-          TextFormField(
-            controller: controller,
-            readOnly: isReadOnly,
-            keyboardType: keyboardType,
-            decoration: InputDecoration(
-              hintText: hintText,
-              filled: true,
-              fillColor: Colors.grey[50],
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide.none,
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: Colors.grey[300]!),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: TColo.primaryColor1, width: 2),
-              ),
-              contentPadding:
-                  EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              suffixIcon: suffixIcon,
-            ),
-            validator: validator ??
-                (isRequired
-                    ? (value) => value?.isEmpty ?? true ? 'Required' : null
-                    : null),
-          ),
-          if (label == "Amount" && widget.user!["schemeType"] == "Wishlist")
-            Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: Text(
-                "Fixed amount: 2000 for Wishlist",
-                style: TextStyle(color: Colors.red, fontSize: 12),
-              ),
-            ),
-          if (label == "Amount" && widget.user!["schemeType"] != "Wishlist")
-            Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: Text(
-                "Minimum amount: 5000",
-                style: TextStyle(color: Colors.red, fontSize: 12),
-              ),
-            ),
-        ],
-      ),
-    );
+  List<UserModel> userAccount = [];
+  getUserAccount() async {
+    Future.microtask(() {
+      if (widget.user?["phone_no"] != null) {
+        context.read<AccountProvider>().loadAccounts(widget.user!["phone_no"]);
+      }
+    });
   }
 
-  Widget _buildDateField() {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Date',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: Colors.grey[700],
-            ),
-          ),
-          SizedBox(height: 8),
-          GestureDetector(
-            onTap: () => _selectDate(context),
-            child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              decoration: BoxDecoration(
-                color: Colors.grey[50],
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey[300]!),
+  Widget _buildAppBar(String type, String name, id, var user) {
+    return Container(
+      width: MediaQuery.of(context).size.width,
+      height: MediaQuery.of(context).size.height * .15,
+      decoration: BoxDecoration(color: TColo.primaryColor1),
+      child: SafeArea(
+        child: Stack(
+          children: [
+            Center(
+              child: RotatedBox(
+                quarterTurns: 1, // 1 = 90° clockwise, 2 = 180°, 3 = 270°
+                child: Image(
+                  image: AssetImage("assets/images/logo_bg_white.png"),
+                  width: 400,
+                ),
               ),
-              child: Row(
-                children: [
-                  Icon(Icons.calendar_today, size: 20, color: Colors.grey[600]),
-                  SizedBox(width: 12),
-                  Text(
-                    selectedDate == null
-                        ? DateFormat('MMM dd, yyyy').format(now)
-                        : DateFormat('MMM dd, yyyy').format(selectedDate!),
-                    style: TextStyle(fontSize: 16),
+            ),
+            if (type != "load")
+              Positioned(
+                top: 10,
+                right: 50,
+                child: Container(
+                  height: 100,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      if (name != "") SizedBox(width: 20),
+                      GestureDetector(
+                        onTap: () {
+                          if (name != "") {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => WebHomeScreen(),
+                              ),
+                            );
+                          } else {
+                            // _showLoginDialog(context);
+                          }
+                        },
+                        child: Icon(
+                          FontAwesomeIcons.home,
+                          color: TColo.primaryColor2,
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            ),
-          ),
-        ],
+                ),
+              )
+          ],
+        ),
       ),
     );
+  }
+
+  logout() async {
+    SharedPreferences preferences = await SharedPreferences.getInstance();
+    await preferences.clear();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Payment Receipt',
-          style: TextStyle(color: TColo.primaryColor2),
+    final accountProvider = context.watch<AccountProvider>();
+    final accounts = accountProvider.accounts;
+
+    final activeAccount = accounts.isNotEmpty
+        ? accounts[accountProvider.selectedAccountIndex]
+        : null;
+
+    // Show "No data found" when activeAccount is null
+    if (activeAccount == null) {
+      //  logout();
+      return Scaffold(
+        backgroundColor: Colors.grey[50],
+        body: Column(
+          children: [
+            Expanded(
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // No data icon
+                    Container(
+                      width: 120,
+                      height: 120,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[100],
+                        borderRadius: BorderRadius.circular(60),
+                        border: Border.all(
+                          color: Colors.grey[300]!,
+                          width: 2,
+                        ),
+                      ),
+                      child: Icon(
+                        Icons.folder_open_outlined,
+                        size: 60,
+                        color: Colors.grey[400],
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // No data found text
+                    Text(
+                      "No Data Found",
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey[700],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+
+                    // Description text
+                    Text(
+                      "No account information available",
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.grey[500],
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 32),
+
+                    // Optional refresh button
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        // Add refresh functionality here
+                        // You can call your data loading method
+                        setState(() {
+                          // Trigger a rebuild or reload data
+                        });
+                      },
+                      icon: Icon(
+                        Icons.refresh,
+                        color: Colors.white,
+                      ),
+                      label: Text(
+                        "Refresh",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: TColo.primaryColor1,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 32,
+                          vertical: 16,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 2,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
-        centerTitle: true,
-        elevation: 0,
-        backgroundColor: TColo.primaryColor1,
-      ),
-      body: Center(
-        child: Container(
-          constraints: BoxConstraints(maxWidth: 800),
-          padding: EdgeInsets.all(24),
-          child: Form(
-            key: _formKey,
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+      );
+    }
+
+    return Scaffold(
+      backgroundColor: Colors.grey[50],
+      body: FadeTransition(
+        opacity: _fadeAnimation,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            if (constraints.maxWidth < 800) {
+              // Mobile Layout - Stack panels vertically
+              return Column(
                 children: [
-                  // Customer Info
-                  Card(
-                    elevation: 2,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                  _buildAppBar("load", activeAccount!.name, activeAccount.id,
+                      activeAccount),
+                  if (widget.user!.isNotEmpty)
+                    Container(
+                      height: 300,
+                      child: buildLeftPanel(context),
                     ),
-                    child: Padding(
-                      padding: EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Customer Information',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: TColo.primaryColor1,
-                            ),
-                          ),
-                          SizedBox(height: 8),
-                          Divider(),
-                          SizedBox(height: 8),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text('Name: ${widget.custName ?? 'N/A'}',
-                                    style: TextStyle(fontSize: 14)),
-                              ),
-                              SizedBox(width: 16),
-                              Expanded(
-                                child: Text('ID: ${widget.userid ?? 'N/A'}',
-                                    style: TextStyle(fontSize: 14)),
-                              )
-                            ],
-                          ),
-                          SizedBox(height: 8),
-                          Text('Scheme: ${widget.user!["schemeType"] ?? 'N/A'}',
-                              style: TextStyle(fontSize: 14)),
-                        ],
-                      ),
-                    ),
+                  Expanded(
+                    child: rightPanalProfile(user: activeAccount!),
                   ),
-                  SizedBox(height: 24),
-
-                  // Payment Form
-                  Card(
-                    elevation: 2,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Padding(
-                      padding: EdgeInsets.all(24),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Payment Details',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: TColo.primaryColor1,
-                            ),
+                ],
+              );
+            } else {
+              // Desktop Layout - Side by side panels
+              return Column(
+                children: [
+                  _buildAppBar("locad", activeAccount.name, activeAccount.id,
+                      activeAccount),
+                  Expanded(
+                    child: Row(
+                      children: [
+                        if (widget.user!.isNotEmpty)
+                          Expanded(
+                            flex: 2,
+                            child: buildLeftPanel(context),
                           ),
-                          SizedBox(height: 16),
-                          Divider(),
-                          SizedBox(height: 16),
-
-                          // Amount
-                          _buildFormField(
-                            label: 'Amount',
-                            controller: amountCntrl,
-                            isReadOnly:
-                                widget.user!["schemeType"] == "Wishlist",
-                            keyboardType: TextInputType.number,
-                            suffixIcon: Icon(Icons.currency_rupee, size: 20),
-                          ),
-
-                          // Description
-                          _buildFormField(
-                            label: 'Description',
-                            controller: descriptionController,
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Please enter description';
-                              }
-                              return null;
-                            },
-                          ),
-
-                          // Gram Rate
-                          _buildFormField(
-                            label: 'Gram Rate',
-                            controller: grampPerdayController,
-                            keyboardType: TextInputType.number,
-                            suffixIcon: Icon(Icons.scale, size: 20),
-                          ),
-
-                          // Date
-                          _buildDateField(),
-
-                          SizedBox(height: 24),
-                          SizedBox(
-                            width: double.infinity,
-                            height: 50,
-                            child: ElevatedButton(
-                              onPressed: _isLoading ? null : _saveForm,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: TColo.primaryColor1,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                              child: _isLoading
-                                  ? CircularProgressIndicator(
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                          Colors.white),
-                                      strokeWidth: 2,
-                                    )
-                                  : Text(
-                                      'Save Payment',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                            ),
-                          ),
-                        ],
-                      ),
+                        Expanded(
+                          flex: 3,
+                          child: rightPanalProfile(user: activeAccount!),
+                        ),
+                      ],
                     ),
                   ),
                 ],
-              ),
-            ),
-          ),
+              );
+            }
+          },
         ),
       ),
     );

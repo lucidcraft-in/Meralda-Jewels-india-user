@@ -227,47 +227,63 @@ class _CustomerInvestmentWebScreenState
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
-          child: DataTable(
-            columnSpacing: isSmallScreen ? 16 : 24,
-            headingRowColor: MaterialStateProperty.all(const Color(0xFFF1F3F4)),
-            columns: const [
-              DataColumn(label: Text("Date")),
-              DataColumn(label: Text("Gold Weight (g)")),
-              DataColumn(label: Text("Amount (₹)")),
-              DataColumn(label: Text("Note")),
-            ],
-            rows: transactions.map((tx) {
-              final timestamp = tx['date'] as Timestamp?;
-              final weight = tx['gramWeight'] ?? 0.0;
-              final amount = tx['amount'] ?? 0.0;
-              final note = tx['note'] ?? '';
-              return DataRow(
-                color: MaterialStateProperty.all(tx["transactionType"] == 0
-                    ? Color.fromARGB(255, 215, 230, 216)
-                    : Color.fromARGB(255, 228, 215, 215)),
-                cells: [
-                  DataCell(Text(
-                    timestamp != null
-                        ? timestamp.toDate().toString().split(' ')[0]
-                        : 'N/A',
-                    style: TextStyle(fontSize: isSmallScreen ? 12 : 14),
-                  )),
-                  DataCell(Text(
-                    weight.toStringAsFixed(2),
-                    style: TextStyle(fontSize: isSmallScreen ? 12 : 14),
-                  )),
-                  DataCell(Text(
-                    "₹ ${amount.toStringAsFixed(2)}",
-                    style: TextStyle(fontSize: isSmallScreen ? 12 : 14),
-                  )),
-                  DataCell(Text(
-                    note,
-                    style: TextStyle(fontSize: isSmallScreen ? 12 : 14),
-                  )),
-                ],
-              );
-            }).toList(),
-          ),
+          child: transactions.isEmpty
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 20),
+                    child: Text(
+                      "No data found",
+                      style: TextStyle(
+                        fontSize: isSmallScreen ? 14 : 16,
+                        color: Colors.grey[600],
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                )
+              : DataTable(
+                  columnSpacing: isSmallScreen ? 16 : 24,
+                  headingRowColor:
+                      MaterialStateProperty.all(const Color(0xFFF1F3F4)),
+                  columns: const [
+                    DataColumn(label: Text("Date")),
+                    DataColumn(label: Text("Gold Weight (g)")),
+                    DataColumn(label: Text("Amount (₹)")),
+                    DataColumn(label: Text("Note")),
+                  ],
+                  rows: transactions.map((tx) {
+                    final timestamp = tx['date'] as Timestamp?;
+                    final weight = tx['gramWeight'] ?? 0.0;
+                    final amount = tx['amount'] ?? 0.0;
+                    final note = tx['note'] ?? '';
+                    return DataRow(
+                      color: MaterialStateProperty.all(
+                          tx["transactionType"] == 0
+                              ? Color.fromARGB(255, 215, 230, 216)
+                              : Color.fromARGB(255, 228, 215, 215)),
+                      cells: [
+                        DataCell(Text(
+                          timestamp != null
+                              ? timestamp.toDate().toString().split(' ')[0]
+                              : 'N/A',
+                          style: TextStyle(fontSize: isSmallScreen ? 12 : 14),
+                        )),
+                        DataCell(Text(
+                          weight.toStringAsFixed(2),
+                          style: TextStyle(fontSize: isSmallScreen ? 12 : 14),
+                        )),
+                        DataCell(Text(
+                          "₹ ${amount.toStringAsFixed(2)}",
+                          style: TextStyle(fontSize: isSmallScreen ? 12 : 14),
+                        )),
+                        DataCell(Text(
+                          note,
+                          style: TextStyle(fontSize: isSmallScreen ? 12 : 14),
+                        )),
+                      ],
+                    );
+                  }).toList(),
+                ),
         ),
       ),
     );

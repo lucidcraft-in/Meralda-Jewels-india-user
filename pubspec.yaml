@@ -76,6 +76,9 @@ dependencies:
   flutter_cached_pdfview: ^0.4.3
   flutter_svg: ^2.0.9
   video_player: ^2.9.5
+  image_picker: ^1.1.2
+  webview_flutter: ^4.8.0
+
 
 
 dev_dependencies:
@@ -114,6 +117,7 @@ flutter:
     - assets/pdf/
     - assets/video/22e3a57cf3f14787ba9cfc940d6f56c7.mp4
     - assets/photos/.
+    - assets/jewelleryLoc/.
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware
@@ -126,6 +130,13 @@ flutter:
   # "family" key with the font family name, and a "fonts" key with a
   # list giving the asset and other descriptors for the font. For
   # example:
+  fonts:
+    - family: arsenica
+      fonts:
+        - asset: assets/font/ArsenicaTrial-Medium.ttf
+          weight: 400
+       
+         
   # fonts:
   #   - family: Schyler
   #     fonts:

@@ -195,6 +195,7 @@ class TransactionProvider with ChangeNotifier {
 
         return [transactionList, balance, balancegram];
       }
+      return [];
     } catch (e) {
       print(e);
     }
@@ -308,6 +309,7 @@ class TransactionProvider with ChangeNotifier {
       await collectionReferenceUser.doc(transactionModel.customerId).update({
         'balance': newbalance,
         'total_gram': gramTotalWeightFinalFixed,
+        'openingAmount': transactionModel.amount
       });
       notifyListeners();
 

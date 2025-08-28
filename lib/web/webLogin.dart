@@ -3,7 +3,10 @@ import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:meralda_gold_user/common/colo_extension.dart';
+import 'package:meralda_gold_user/web/webBasicRag.dart';
 import 'package:meralda_gold_user/web/webHome.dart';
+import 'package:meralda_gold_user/web/webPayScreen.dart';
+import 'package:printing/printing.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -15,17 +18,55 @@ class WebLoginpage extends StatefulWidget {
   _WebLoginpageState createState() => _WebLoginpageState();
 }
 
-class _WebLoginpageState extends State<WebLoginpage> {
+class _WebLoginpageState extends State<WebLoginpage>
+    with TickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
-  final _custIdController = TextEditingController();
+  final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
   bool _isLoading = false;
+  String _errorMessage = "";
+  bool _showErrorCard = false;
+  late AnimationController _animationController;
+  late Animation<Offset> _slideAnimation;
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
+    _animationController = AnimationController(
+      duration: Duration(milliseconds: 300),
+      vsync: this,
+    );
+    _slideAnimation = Tween<Offset>(
+      begin: Offset(0.0, -1.0),
+      end: Offset(0.0, 0.0),
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeInOut,
+    ));
+  }
+
+  void _showErrorMessage(String message) {
+    setState(() {
+      _errorMessage = message;
+      _showErrorCard = true;
+    });
+
+    _animationController.forward();
+
+    // Hide the error card after 3 seconds
+    Future.delayed(Duration(seconds: 3), () {
+      if (mounted) {
+        _animationController.reverse().then((_) {
+          if (mounted) {
+            setState(() {
+              _showErrorCard = false;
+              _errorMessage = "";
+            });
+          }
+        });
+      }
+    });
   }
 
   void _handleLogin() async {
@@ -39,8 +80,6 @@ class _WebLoginpageState extends State<WebLoginpage> {
       setState(() {
         _isLoading = false;
       });
-
-      // Navigator.pop(context);
     }
   }
 
@@ -77,6 +116,11 @@ class _WebLoginpageState extends State<WebLoginpage> {
                           children: [
                             // Logo and Title
                             _buildHeader(),
+                            SizedBox(height: 20),
+
+                            // Error Card (positioned above phone field)
+                            if (_showErrorCard) _buildErrorCard(),
+                            if (_showErrorCard) SizedBox(height: 15),
 
                             // Email Field
                             _buildCustIdField(),
@@ -96,11 +140,9 @@ class _WebLoginpageState extends State<WebLoginpage> {
                               onPressed: () {
                                 Navigator.pop(context);
                                 showDialog(
-                                  context: context,
-                                  barrierDismissible: false,
-                                  builder: (context) =>
-                                      UserRegistrationDialog(),
-                                );
+                                    context: context,
+                                    barrierDismissible: false,
+                                    builder: (context) => MobileNumberScreen());
                               },
                               child: Text("New user? Register here"),
                             ),
@@ -130,6 +172,66 @@ class _WebLoginpageState extends State<WebLoginpage> {
     );
   }
 
+  Widget _buildErrorCard() {
+    return SlideTransition(
+      position: _slideAnimation,
+      child: Container(
+        width: double.infinity,
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.red.shade50,
+          border: Border.all(color: Colors.red.shade300),
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.red.withOpacity(0.1),
+              spreadRadius: 1,
+              blurRadius: 4,
+              offset: Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Icon(
+              Icons.error_outline,
+              color: Colors.red.shade600,
+              size: 20,
+            ),
+            SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                _errorMessage,
+                style: TextStyle(
+                  color: Colors.red.shade700,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            GestureDetector(
+              onTap: () {
+                _animationController.reverse().then((_) {
+                  if (mounted) {
+                    setState(() {
+                      _showErrorCard = false;
+                      _errorMessage = "";
+                    });
+                  }
+                });
+              },
+              child: Icon(
+                Icons.close,
+                color: Colors.red.shade600,
+                size: 18,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildHeader() {
     return Column(
       children: [
@@ -144,12 +246,12 @@ class _WebLoginpageState extends State<WebLoginpage> {
 
   Widget _buildCustIdField() {
     return TextFormField(
-      controller: _custIdController,
-      keyboardType: TextInputType.emailAddress,
+      controller: _phoneController,
+      keyboardType: TextInputType.phone,
       decoration: InputDecoration(
-        labelText: 'Customer Id',
-        hintText: 'Enter your customer id',
-        prefixIcon: Icon(Icons.email_outlined, color: TColo.primaryColor1),
+        labelText: 'Mobile Number',
+        hintText: 'Enter your mobile number',
+        prefixIcon: Icon(Icons.phone_outlined, color: TColo.primaryColor1),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: Colors.grey[300]!),
@@ -167,9 +269,8 @@ class _WebLoginpageState extends State<WebLoginpage> {
       ),
       validator: (value) {
         if (value == null || value.isEmpty) {
-          return 'Please enter your customer id';
+          return 'Please enter your mobile number';
         }
-
         return null;
       },
     );
@@ -260,12 +361,7 @@ class _WebLoginpageState extends State<WebLoginpage> {
   Widget _buildForgotPassword() {
     return TextButton(
       onPressed: () {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Forgot password feature coming soon!'),
-            backgroundColor: Color(0xFF1B5E20),
-          ),
-        );
+        _showErrorMessage('Forgot password feature coming soon!');
       },
       child: Text(
         'Forgot Password?',
@@ -280,73 +376,48 @@ class _WebLoginpageState extends State<WebLoginpage> {
 
   @override
   void dispose() {
-    _custIdController.dispose();
+    _phoneController.dispose();
     _passwordController.dispose();
+    _animationController.dispose();
     super.dispose();
   }
 
   login() async {
-    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
-    final custId = _custIdController.text.trim();
+    final sharedPreferences = await SharedPreferences.getInstance();
+    final mobileNo = _phoneController.text.trim();
+    final password = _passwordController.text.trim();
 
-    if (custId.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Customer ID is required")),
-      );
+    if (mobileNo.isEmpty || password.isEmpty) {
+      _showErrorMessage("Mobile Number and Password are required");
       return;
     }
 
     final userProvider = Provider.of<User>(context, listen: false);
-    userProvider.loginUser(custId, _passwordController.text).then((val) {
-      if (val.isNotEmpty) {
-        print(val[0]);
-        if (val[0]["staffId"] == "") {
-          Navigator.pop(context); // Close any loading dialog if present
-          showDialog(
-            context: context,
-            barrierDismissible: false,
-            builder: (context) => AlertDialog(
-              title: Text("Account Verification"),
-              content: Text(
-                  "Your account is under verification. Please try again later."),
-              actions: [
-                TextButton(
-                  child: Text("OK"),
-                  onPressed: () => Navigator.of(context).pop(),
-                ),
-              ],
-            ),
-          );
-        } else {
-          sharedPreferences.setString("user", json.encode(val[0]));
-          Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(
-              builder: (context) => WebHomeScreen(),
-            ),
-            (Route<dynamic> route) => false,
-          );
-        }
-      } else {
-        Navigator.pop(context); // Close any loading dialog if present
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              "Invalid user ID or password",
-              style: TextStyle(color: Colors.white),
+
+    try {
+      final users = await userProvider.loginUser(mobileNo, password);
+
+      if (users.isNotEmpty) {
+        final user = users[0];
+        sharedPreferences.setString("user", json.encode(user.toMap()));
+
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(
+            builder: (context) => WebPayAmountScreen(
+              user: user.toMap(),
+              userid: user.id ?? "",
+              custName: user.name.isNotEmpty ? user.name : "Customer",
             ),
           ),
+          (Route<dynamic> route) => false,
         );
+      } else {
+        _showErrorMessage("Invalid mobile number or password");
       }
-    }).catchError((error) {
-      Navigator.pop(context); // Close any loading dialog if present
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            "An error occurred during login",
-            style: TextStyle(color: Colors.white),
-          ),
-        ),
-      );
-    });
+    } catch (e, st) {
+      print("Login error: $e");
+      print(st);
+      _showErrorMessage("An error occurred during login");
+    }
   }
 }

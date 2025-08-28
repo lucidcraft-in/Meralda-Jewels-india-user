@@ -185,49 +185,74 @@ class User with ChangeNotifier {
     }
   }
 
-  Future loginUser(String custId, String phoneNo) async {
-    print("----------");
-    List userlist = [];
-    QuerySnapshot querySnapshot;
+  // Future loginUser(String mobileNo, String password) async {
+  //   print("----------");
+  //   List userlist = [];
+  //   QuerySnapshot querySnapshot;
 
+  //   try {
+  //     querySnapshot = await collectionReference
+  //         .where("phone_no", isEqualTo: mobileNo)
+  //         .where("password", isEqualTo: password)
+  //         .get();
+  //     print(querySnapshot.docs.length);
+  //     if (querySnapshot.docs.isNotEmpty) {
+  //       for (var doc in querySnapshot.docs.toList()) {
+  //         Map a = {
+  //           "id": doc.id,
+  //           "name": doc['name'],
+  //           "custId": doc["custId"],
+  //           "phoneNo": doc["phone_no"],
+  //           "address": doc["address"],
+  //           "staffId": doc["staffId"],
+  //           // "scheme": doc["scheme"],
+  //           "place": doc["place"],
+  //           "balance": doc['balance'],
+  //           "totalGram": doc["total_gram"],
+  //           "branch": doc['branch'],
+  //           "schemeType": doc["schemeType"],
+  //           // "dateofBirth": doc['dateofBirth'].toDate(),
+  //           "nominee": doc['nominee'],
+  //           "nomineePhone": doc['nomineePhone'],
+  //           "nomineeRelation": doc['nomineeRelation'],
+  //           "adharCard": doc['adharCard'],
+  //           "panCard": doc['panCard'],
+  //           "pinCode": doc['pinCode'],
+  //           "openingAmount": doc["openingAmount"],
+  //         };
+  //         userlist.add(a);
+  //       }
+  //       print(userlist);
+  //       return userlist;
+  //     } else {
+  //       return [];
+  //     }
+  //   } catch (e) {
+  //     print(e);
+  //   }
+  // }
+  Future<List<UserModel>> loginUser(String mobileNo, String password) async {
     try {
-      querySnapshot = await collectionReference
-          .where("custId", isEqualTo: custId)
-          .where("phone_no", isEqualTo: phoneNo)
+      final querySnapshot = await collectionReference
+          .where("phone_no", isEqualTo: mobileNo)
+          .where("password", isEqualTo: password)
           .get();
-      print(querySnapshot.docs.length);
+
       if (querySnapshot.docs.isNotEmpty) {
-        for (var doc in querySnapshot.docs.toList()) {
-          Map a = {
-            "id": doc.id,
-            "name": doc['name'],
-            "custId": doc["custId"],
-            "phoneNo": doc["phone_no"],
-            "address": doc["address"],
-            "staffId": doc["staffId"],
-            // "scheme": doc["scheme"],
-            "place": doc["place"],
-            "balance": doc['balance'],
-            "totalGram": doc["total_gram"],
-            "branch": doc['branch'],
-            "schemeType": doc["schemeType"],
-            // "dateofBirth": doc['dateofBirth'].toDate(),
-            "nominee": doc['nominee'],
-            "nomineePhone": doc['nomineePhone'],
-            "nomineeRelation": doc['nomineeRelation'],
-            "adharCard": doc['adharCard'],
-            "panCard": doc['panCard'],
-            "pinCode": doc['pinCode'],
-          };
-          userlist.add(a);
+        final users = querySnapshot.docs.map((doc) {
+          return UserModel.fromData(doc.data() as Map<String, dynamic>, doc.id);
+        }).toList();
+        print("==================");
+        for (var u in users) {
+          print(u.toMap());
         }
-        print(userlist);
-        return userlist;
+        return users;
       } else {
         return [];
       }
     } catch (e) {
-      print(e);
+      print("Login error: $e");
+      return [];
     }
   }
 
@@ -272,6 +297,10 @@ class User with ChangeNotifier {
           'panCard': userModel.panCard,
           'pinCode': userModel.pinCode,
           'staffName': assignStaffName,
+          "aadharFrontUrl": userModel.aadharFrontUrl,
+          "aadharBackUrl": userModel.aadharBackUrl,
+          "panCardUrl": userModel.panCardUrl,
+          "openingAmount": userModel.openingAmount,
 
           //  userModel.staffName,
           "otp": 0,

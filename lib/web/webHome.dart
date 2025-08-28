@@ -11,13 +11,21 @@ import 'package:meralda_gold_user/providers/user.dart';
 import 'package:meralda_gold_user/screens/transaction_screen.dart';
 import 'package:meralda_gold_user/web/webPayScreen.dart';
 import 'package:meralda_gold_user/web/webTransaction.dart';
+import 'package:meralda_gold_user/web/widgets/asuranceContainer.dart';
+import 'package:meralda_gold_user/web/widgets/calculator.dart';
 import 'package:meralda_gold_user/web/widgets/columnUi.dart';
+import 'package:meralda_gold_user/web/widgets/footerSection.dart';
+import 'package:meralda_gold_user/web/widgets/jewelleryLocations.dart';
+import 'package:meralda_gold_user/web/widgets/planeSpec.dart';
+import 'package:meralda_gold_user/web/widgets/schemCard.dart';
+import 'package:meralda_gold_user/web/widgets/webgoldRate.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:video_player/video_player.dart';
 
 import '../providers/product.dart';
 import '../screens/profile.dart';
+import 'helperWidget.dart/switchCountry.dart';
 import 'webLogin.dart';
 import 'webProfile.dart';
 
@@ -32,7 +40,7 @@ class _WebHomeScreenState extends State<WebHomeScreen>
   late Animation<double> _fadeAnimation;
   late VideoPlayerController _controller;
   bool _isMuted = true;
-
+  String _selectedFlag = "india";
   @override
   void initState() {
     super.initState();
@@ -67,38 +75,23 @@ class _WebHomeScreenState extends State<WebHomeScreen>
   var user;
   Future loadUserLocally() async {
     SharedPreferences pref = await SharedPreferences.getInstance();
-    print("=====");
-    print(pref.containsKey("user"));
+
     if (pref.containsKey("user")) {
       var userData = pref.getString("user");
 
       if (userData != null) {
         user = json.decode(userData);
-        print(user);
+
         setState(() {
           _userName = user['name'] ?? '';
         });
       }
     } else {
+      _showLoginDialog(context);
       setState(() {
         _userName = '';
       });
     }
-  }
-
-  List products = [];
-  getProduct() {
-    Provider.of<Product>(context, listen: false).getProduct().then((onValue) {
-      setState(() {
-        products = onValue ?? [];
-      });
-      print(products[0]);
-    }).catchError((error) {
-      print('Error fetching products: $error');
-      setState(() {
-        products = []; // Fallback to empty list on error
-      });
-    });
   }
 
   @override
@@ -130,9 +123,10 @@ class _WebHomeScreenState extends State<WebHomeScreen>
                 child: Column(
                   children: [
                     _buildAppBar(isLargeScreen),
-                    _buildWelcomeMessage(),
+                    // _buildWelcomeMessage(),
                     _buildContent(context, isLargeScreen, isMediumScreen,
                         isSmallScreen, user),
+                    CustomFooter()
                   ],
                 ),
               ),
@@ -150,26 +144,42 @@ class _WebHomeScreenState extends State<WebHomeScreen>
       //   maxWidth: isLargeScreen ? 1200 : (isMediumScreen ? 800 : 600),
       // ),
       padding: EdgeInsets.symmetric(
-        horizontal: isLargeScreen ? 10 : (isMediumScreen ? 15 : 10),
+        horizontal: isLargeScreen ? 40 : (isMediumScreen ? 15 : 10),
         vertical: 10,
       ),
       child: Column(
         children: [
           _buildNewArrivalBanner(),
           SizedBox(height: 20),
-          _buildSubscriptionPlans(
-              context, isLargeScreen, isMediumScreen, isSmallScreen),
+          // SsuranceContainer(),
+          RightSideImgSchemeCard(),
+          SizedBox(height: 20), GoldCalculatorScreen(),
           SizedBox(height: 20),
-          _buildGoldRates(isMediumScreen),
+          LeftSideImgSchemeCard(),
+
+          // _buildSubscriptionPlans(
+          //     context, isLargeScreen, isMediumScreen, isSmallScreen),
+          // SizedBox(height: 20),
+          // _buildGoldRates(isMediumScreen),
+
+          // SizedBox(height: 20),
+          // _buildQuickAccess(context, isMediumScreen, userData),
           SizedBox(height: 20),
-          _buildQuickAccess(context, isMediumScreen, userData),
+          HowItWorksSection(),
+
           SizedBox(height: 20),
-          _buildStoreInfo(),
+          GoldRateSection(),
           SizedBox(height: 20),
-          _buildFeaturedProducts(context, isMediumScreen),
+          // _buildStoreInfo(),
+          LocationSection(),
           SizedBox(height: 20),
-          _buildCategories(context, isMediumScreen),
+
           SizedBox(height: 20),
+
+          // _buildFeaturedProducts(context, isMediumScreen),
+          // SizedBox(height: 20),
+          // _buildCategories(context, isMediumScreen),
+          // SizedBox(height: 20),
         ],
       ),
     );
@@ -187,6 +197,7 @@ class _WebHomeScreenState extends State<WebHomeScreen>
             child: Text(
               'Choose Your Plan',
               style: TextStyle(
+                fontFamily: "arsenica",
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
                 color: Color(0xFF1B5E20),
@@ -707,30 +718,79 @@ class _WebHomeScreenState extends State<WebHomeScreen>
                 ),
               ),
             ),
-            Align(
-              alignment: Alignment.centerRight,
+            Positioned(
+              top: 10,
+              right: 50,
               child: Container(
-                width: 100,
                 height: 100,
-                child: GestureDetector(
-                  onTap: () {
-                    if (_userName != "") {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => Webprofile(),
-                        ),
-                      );
-                    } else {
-                      _showLoginDialog(context);
-                    }
-
-                    //
-                  },
-                  child: Icon(
-                    FontAwesomeIcons.userTie,
-                    color: TColo.primaryColor2,
-                  ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Country Dropdown
+                    CountryDropDown(),
+                    SizedBox(width: 20),
+                    // if (_userName != "")
+                    //   GestureDetector(
+                    //     onTap: () {
+                    //       Navigator.push(
+                    //         context,
+                    //         MaterialPageRoute(
+                    //           builder: (context) => WebPayAmountScreen(
+                    //             custName: _userName,
+                    //             userid: user["id"],
+                    //             user: user,
+                    //           ),
+                    //         ),
+                    //       );
+                    //     },
+                    //     child: Icon(
+                    //       FontAwesomeIcons.moneyBillTransfer,
+                    //       color: TColo.primaryColor2,
+                    //     ),
+                    //   ),
+                    // if (_userName != "") SizedBox(width: 20),
+                    // if (_userName != "")
+                    //   GestureDetector(
+                    //     onTap: () {
+                    //       Navigator.push(
+                    //         context,
+                    //         MaterialPageRoute(
+                    //           builder: (context) =>
+                    //               CustomerInvestmentWebScreen(),
+                    //         ),
+                    //       );
+                    //     },
+                    //     child: Icon(
+                    //       FontAwesomeIcons.history,
+                    //       color: TColo.primaryColor2,
+                    //     ),
+                    //   ),
+                    // if (_userName != "")
+                    SizedBox(width: 20),
+                    GestureDetector(
+                      onTap: () {
+                        if (_userName != "") {
+                          print(user["id"]);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => WebPayAmountScreen(
+                                custName: _userName,
+                                userid: user["id"],
+                                user: user,
+                              ),
+                            ),
+                          );
+                        } else {
+                          _showLoginDialog(context);
+                        }
+                      },
+                      child: Icon(
+                        FontAwesomeIcons.userTie,
+                        color: TColo.primaryColor2,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             )
@@ -828,29 +888,30 @@ class _WebHomeScreenState extends State<WebHomeScreen>
   Widget _buildNewArrivalBanner() {
     return LayoutBuilder(
       builder: (context, constraints) {
+        print(constraints.maxWidth);
         final isWide = constraints.maxWidth > 600;
 
         return Container(
-            // height: isWide ? 180 : 220,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
-                colors: [
-                  TColo.primaryColor1,
-                  Color(0xFF2E7D32),
-                  Color(0xFF4CAF50)
-                ],
-              ),
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: TColo.primaryColor1.withOpacity(0.3),
-                  blurRadius: 15,
-                  offset: Offset(0, 8),
-                ),
-              ],
-            ),
+            // height: isWide ? 480 : 220,
+            // decoration: BoxDecoration(
+            //   gradient: LinearGradient(
+            //     begin: Alignment.centerLeft,
+            //     end: Alignment.centerRight,
+            //     colors: [
+            //       TColo.primaryColor1,
+            //       Color(0xFF2E7D32),
+            //       Color(0xFF4CAF50)
+            //     ],
+            //   ),
+            //   borderRadius: BorderRadius.circular(20),
+            //   boxShadow: [
+            //     BoxShadow(
+            //       color: TColo.primaryColor1.withOpacity(0.3),
+            //       blurRadius: 15,
+            //       offset: Offset(0, 8),
+            //     ),
+            //   ],
+            // ),
             child: _controller.value.isInitialized
                 ? Stack(
                     children: [
@@ -1601,35 +1662,35 @@ class _WebHomeScreenState extends State<WebHomeScreen>
       {bool isTwoLines = false, var userData}) {
     return GestureDetector(
       onTap: () {
-        if (title == "View Transaction") {
-          if (user != null) {
-            Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => CustomerInvestmentWebScreen()));
-          } else {
-            _showLoginDialog(context);
-            // ScaffoldMessenger.of(context).showSnackBar(
-            //   SnackBar(content: Text("Customer ID is required")),
-            // );
-          }
-        } else {
-          if (_userName != "") {
-            print(user["id"]);
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => WebPayAmountScreen(
-                  custName: _userName,
-                  userid: user["id"],
-                  user: user,
-                ),
+        // if (title == "View Transaction") {
+        // if (user != null) {
+        //   Navigator.push(
+        //       context,
+        //       MaterialPageRoute(
+        //           builder: (context) => CustomerInvestmentWebScreen()));
+        // } else {
+        //   _showLoginDialog(context);
+        //   // ScaffoldMessenger.of(context).showSnackBar(
+        //   //   SnackBar(content: Text("Customer ID is required")),
+        //   // );
+        // }
+        // } else {
+        if (_userName != "") {
+          print(user["id"]);
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => WebPayAmountScreen(
+                custName: _userName,
+                userid: user["id"],
+                user: user,
               ),
-            );
-          } else {
-            _showLoginDialog(context);
-          }
+            ),
+          );
+        } else {
+          _showLoginDialog(context);
         }
+        // }
       },
       child: Container(
         padding: EdgeInsets.all(20),
@@ -1695,7 +1756,7 @@ class _WebHomeScreenState extends State<WebHomeScreen>
   void _showLoginDialog(BuildContext context) {
     showGeneralDialog(
       context: context,
-      barrierDismissible: false,
+      // barrierDismissible: false,
       barrierLabel: 'Login',
       transitionDuration: Duration(milliseconds: 300),
       pageBuilder: (context, animation, secondaryAnimation) {

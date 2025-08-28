@@ -6,8 +6,13 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:meralda_gold_user/common/colo_extension.dart';
 import 'package:meralda_gold_user/web/webHome.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../model/customerModel.dart';
+import '../providers/account_provider.dart';
+import '../providers/transaction.dart';
+import '../providers/user.dart';
 import '../screens/login_screen.dart';
 import 'widgets/webLogout.dart';
 
@@ -18,313 +23,775 @@ class Webprofile extends StatefulWidget {
   State<Webprofile> createState() => _WebprofileState();
 }
 
-class _WebprofileState extends State<Webprofile> {
-  Map<String, dynamic>? localUserData;
+class _WebprofileState extends State<Webprofile> with TickerProviderStateMixin {
+  UserModel? localUserData;
   bool isLoading = true;
+  bool isLoadingTransactions = true;
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+
+  // Transaction related variables
+  List transactions = [];
+  double investedAmount = 0.00;
+  double balanceInGrams = 0.00;
+  TransactionProvider? db;
+  User? dbUser;
 
   @override
   void initState() {
+    print("-------");
     super.initState();
+    _initAnimations();
     _loadUserLocally();
+    _loadUserDataAndTransactions();
+  }
+
+  void _initAnimations() {
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeInOut,
+    ));
+
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeOutBack,
+    ));
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadUserLocally() async {
-    SharedPreferences pref = await SharedPreferences.getInstance();
-    if (pref.containsKey("user")) {
-      var userJson = pref.getString("user");
-      if (userJson != null) {
-        setState(() {
-          localUserData = json.decode(userJson);
-          isLoading = false;
-        });
-        return;
-      }
-    }
+    await Future.delayed(const Duration(milliseconds: 500));
     setState(() {
       isLoading = false;
     });
+    _animationController.forward();
+  }
+
+  var activeAccount;
+  Future<void> _loadUserDataAndTransactions() async {
+    print("-----   -----");
+    final accountProvider = context.read<AccountProvider>();
+    final accounts = accountProvider.accounts;
+    if (accounts.isNotEmpty) {
+      activeAccount = accounts[accountProvider.selectedAccountIndex];
+
+      await _getTransactions(activeAccount);
+    }
+  }
+
+  Future<void> _getTransactions(UserModel user) async {
+    print(user);
+    if (user == null) return;
+
+    db = TransactionProvider();
+    dbUser = User();
+    db!.initiliase();
+
+    try {
+      var result = await db!.read(user.id!);
+      if (result != null && mounted) {
+        setState(() {
+          transactions = result[0] ?? [];
+          investedAmount = result[1] ?? 0.0;
+          balanceInGrams = result[2] ?? 0.0;
+          isLoadingTransactions = false;
+        });
+      }
+      print("=========");
+      print(transactions);
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          isLoadingTransactions = false;
+        });
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final accountProvider = context.watch<AccountProvider>();
+    final accounts = accountProvider.accounts;
+
+    final activeAccount = accounts.isNotEmpty
+        ? accounts[accountProvider.selectedAccountIndex]
+        : null;
+    localUserData = activeAccount;
+    final size = MediaQuery.of(context).size;
+    final isDesktop = size.width > 1200;
+    final isTablet = size.width > 800 && size.width <= 1200;
+
     return Scaffold(
+      backgroundColor: Colors.grey[50],
       body: isLoading
-          ? Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                children: [
-                  Container(
-                    width: double.infinity,
-                    padding: EdgeInsets.all(20),
-                    color: TColo.primaryColor1,
-                    child: Center(
-                      child: Text(
-                        'Customer Profile',
-                        style: TextStyle(
-                          color: TColo.primaryColor2,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w500,
-                        ),
+          ? _buildLoadingState()
+          : FadeTransition(
+              opacity: _fadeAnimation,
+              child: SlideTransition(
+                position: _slideAnimation,
+                child: CustomScrollView(
+                  slivers: [
+                    _buildSliverAppBar(),
+                    SliverPadding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: isDesktop ? 40 : 20,
+                        vertical: 20,
+                      ),
+                      sliver: SliverList(
+                        delegate: SliverChildListDelegate([
+                          if (isDesktop)
+                            _buildDesktopLayout()
+                          else
+                            _buildMobileLayout(),
+                        ]),
                       ),
                     ),
+                  ],
+                ),
+              ),
+            ),
+    );
+  }
+
+  Widget _buildLoadingState() {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            TColo.primaryColor1.withOpacity(0.1),
+            TColo.primaryColor2.withOpacity(0.1),
+          ],
+        ),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 20,
+                    spreadRadius: 0,
                   ),
-                  const SizedBox(height: 30),
-                  _buildProfileHeader(),
-                  const SizedBox(height: 30),
-                  _buildDataSourceIndicator(),
-                  const SizedBox(height: 20),
-                  LogoutButton(
-                    onLogoutSuccess: () {
-                      // Navigate to login screen or perform other actions
-                      Navigator.pushAndRemoveUntil(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => WebHomeScreen()),
-                        (route) => false,
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 20),
-                  _buildProfileSection(),
-                  const SizedBox(height: 30),
-                  _buildNomineeSection(),
-                  const SizedBox(height: 30),
-                  _buildDocumentSection(),
-                  if (localUserData != null) _buildLocalDataSection(),
                 ],
               ),
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(TColo.primaryColor1),
+                strokeWidth: 3,
+              ),
             ),
-    );
-  }
-
-  Widget _buildDataSourceIndicator() {
-    return Container(
-      padding: EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: Colors.grey[200],
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.info_outline, color: Colors.blue),
-          SizedBox(width: 8),
-          Text(
-            localUserData != null
-                ? "Showing data from API with local backup"
-                : "Showing data from API only",
-            style: TextStyle(fontStyle: FontStyle.italic),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildProfileHeader() {
-    final displayData = localUserData;
-
-    return Column(
-      children: [
-        CircleAvatar(
-          radius: 50,
-          backgroundColor: TColo.primaryColor1.withOpacity(0.2),
-          child: Icon(
-            Icons.person,
-            size: 50,
-            color: TColo.primaryColor1,
-          ),
-        ),
-        const SizedBox(height: 15),
-        Text(
-          displayData!['name'] ?? 'No Name',
-          style: TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-            color: TColo.primaryColor1,
-          ),
-        ),
-        Text(
-          'ID: ${displayData!['custId'] ?? 'N/A'}',
-          style: TextStyle(
-            color: Colors.grey[600],
-          ),
-        ),
-        if (localUserData != null)
-          Padding(
-            padding: EdgeInsets.only(top: 8),
-            child: Text(
-              '(Local copy)',
+            const SizedBox(height: 24),
+            Text(
+              'Loading your profile...',
               style: TextStyle(
-                fontSize: 12,
-                color: Colors.green,
-                fontStyle: FontStyle.italic,
+                color: Colors.grey[600],
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSliverAppBar() {
+    return SliverAppBar(
+      expandedHeight: 120,
+      floating: false,
+      pinned: true,
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      flexibleSpace: FlexibleSpaceBar(
+        background: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                TColo.primaryColor1,
+                TColo.primaryColor1.withOpacity(0.8),
+              ],
+            ),
+          ),
+          child: Center(
+            child: Text(
+              'Profile Dashboard',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1,
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDesktopLayout() {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Left Column
+        Expanded(
+          flex: 1,
+          child: Column(
+            children: [
+              _buildProfileCard(),
+              const SizedBox(height: 20),
+              _buildQuickStatsCard(),
+              const SizedBox(height: 20),
+              _buildActionButtons(),
+            ],
+          ),
+        ),
+        const SizedBox(width: 30),
+        // Right Column
+        Expanded(
+          flex: 2,
+          child: Column(
+            children: [
+              _buildPersonalInfoCard(),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(child: _buildNomineeCard()),
+                  const SizedBox(width: 20),
+                  Expanded(child: _buildDocumentCard()),
+                ],
+              ),
+              const SizedBox(height: 20),
+              _buildTransactionHistoryCard(),
+            ],
+          ),
+        ),
       ],
     );
   }
 
-  Widget _buildProfileSection() {
-    final displayData = localUserData;
-
-    return Card(
-      elevation: 3,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(15),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildMobileLayout() {
+    return Column(
+      children: [
+        _buildProfileCard(),
+        const SizedBox(height: 20),
+        _buildQuickStatsCard(),
+        const SizedBox(height: 20),
+        _buildPersonalInfoCard(),
+        const SizedBox(height: 20),
+        _buildTransactionHistoryCard(),
+        const SizedBox(height: 20),
+        Row(
           children: [
-            _buildSectionTitle('Personal Information'),
-            const Divider(),
-            _buildInfoRowWithSource('Phone', displayData!['phoneNo']),
-            _buildInfoRowWithSource('Address', displayData['address']),
-            _buildInfoRowWithSource('Place', displayData['place']),
-            _buildInfoRowWithSource('Branch', displayData['branch']),
-            _buildInfoRowWithSource('Scheme Type', displayData['schemeType']),
-            _buildInfoRowWithSource('Balance',
-                '₹${displayData!['balance']?.toStringAsFixed(2) ?? '0.00'}'),
-            _buildInfoRowWithSource('Total Gold',
-                '${displayData['totalGram']?.toStringAsFixed(2) ?? '0.00'} g'),
+            Expanded(child: _buildNomineeCard()),
+            const SizedBox(width: 20),
+            Expanded(child: _buildDocumentCard()),
           ],
         ),
-      ),
+        const SizedBox(height: 20),
+        _buildActionButtons(),
+      ],
     );
   }
 
-  Widget _buildNomineeSection() {
-    final displayData = localUserData;
-
-    return Card(
-      elevation: 3,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(15),
+  Widget _buildProfileCard() {
+    return Container(
+      padding: const EdgeInsets.all(30),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 30,
+            spreadRadius: 0,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildSectionTitle('Nominee Details'),
-            const Divider(),
-            _buildInfoRowWithSource('Nominee Name', displayData!['nominee']),
-            _buildInfoRowWithSource(
-                'Nominee Phone', displayData['nomineePhone']),
-            _buildInfoRowWithSource('Relation', displayData['nomineeRelation']),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDocumentSection() {
-    final displayData = localUserData;
-
-    return Card(
-      elevation: 3,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(15),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildSectionTitle('Document Details'),
-            const Divider(),
-            _buildInfoRowWithSource('Aadhar Number', displayData!['adharCard']),
-            _buildInfoRowWithSource('PAN Number', displayData['panCard']),
-            _buildInfoRowWithSource('PIN Code', displayData['pinCode']),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLocalDataSection() {
-    return Card(
-      elevation: 3,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(15),
-      ),
-      color: Colors.grey[100],
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.storage, color: Colors.green),
-                SizedBox(width: 8),
-                Text(
-                  'Local Storage Data',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+      child: Column(
+        children: [
+          Stack(
+            children: [
+              Container(
+                width: 100,
+                height: 100,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      TColo.primaryColor1,
+                      TColo.primaryColor1.withOpacity(0.7),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(50),
+                  boxShadow: [
+                    BoxShadow(
+                      color: TColo.primaryColor1.withOpacity(0.3),
+                      blurRadius: 20,
+                      spreadRadius: 0,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: Icon(
+                  Icons.person,
+                  size: 50,
+                  color: Colors.white,
+                ),
+              ),
+              Positioned(
+                right: 0,
+                bottom: 0,
+                child: Container(
+                  width: 28,
+                  height: 28,
+                  decoration: BoxDecoration(
                     color: Colors.green,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: Colors.white, width: 3),
+                  ),
+                  child: Icon(
+                    Icons.verified,
+                    size: 16,
+                    color: Colors.white,
                   ),
                 ),
-              ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Text(
+            localUserData?.name ?? 'No Name',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey[800],
             ),
-            const Divider(),
-            _buildInfoRow(
-                'Last Updated', _formatDate(localUserData!['timestamp'])),
-            _buildInfoRow('Storage Key', 'user'),
-          ],
-        ),
-      ),
-    );
-  }
-
-  String _formatDate(dynamic timestamp) {
-    try {
-      if (timestamp is Timestamp) {
-        return DateFormat('dd MMM yyyy HH:mm').format(timestamp.toDate());
-      }
-      return 'Unknown';
-    } catch (e) {
-      return 'Invalid date';
-    }
-  }
-
-  Widget _buildInfoRowWithSource(String label, String? value) {
-    final isLocal = localUserData != null &&
-        localUserData!.containsKey(label.toLowerCase().replaceAll(' ', ''));
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 120,
+          ),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            decoration: BoxDecoration(
+              color: TColo.primaryColor1.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(20),
+            ),
             child: Text(
-              label,
+              'ID: ${localUserData?.custId ?? 'N/A'}',
               style: TextStyle(
-                fontWeight: FontWeight.w500,
-                color: Colors.grey[600],
+                color: TColo.primaryColor1,
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
               ),
             ),
           ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Row(
-              children: [
-                Expanded(
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.location_on, size: 16, color: Colors.grey[500]),
+              const SizedBox(width: 4),
+              Text(
+                localUserData?.branchName ?? 'Unknown Branch',
+                style: TextStyle(
+                  color: Colors.grey[600],
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuickStatsCard() {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 30,
+            spreadRadius: 0,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Account Overview',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey[800],
+            ),
+          ),
+          const SizedBox(height: 20),
+          _buildStatItem(
+            icon: FontAwesomeIcons.coins,
+            label: 'Balance',
+            value: '₹${localUserData?.balance?.toStringAsFixed(2) ?? '0.00'}',
+            color: Colors.green,
+          ),
+          const Divider(height: 24),
+          _buildStatItem(
+            icon: FontAwesomeIcons.weight,
+            label: 'Total Gold',
+            value:
+                '${balanceInGrams > 0 ? balanceInGrams.toStringAsFixed(2) : (localUserData?.totalGram?.toStringAsFixed(2) ?? '0.00')} g',
+            color: Colors.amber[700]!,
+          ),
+          const Divider(height: 24),
+          _buildStatItem(
+            icon: FontAwesomeIcons.chartLine,
+            label: 'Invested',
+            value: '₹${investedAmount.toStringAsFixed(2)}',
+            color: Colors.blue,
+          ),
+          const Divider(height: 24),
+          _buildStatItem(
+            icon: FontAwesomeIcons.creditCard,
+            label: 'Scheme',
+            value: localUserData?.schemeType ?? 'N/A',
+            color: Colors.purple,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatItem({
+    required IconData icon,
+    required String label,
+    required String value,
+    required Color color,
+  }) {
+    return Row(
+      children: [
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(
+            icon,
+            size: 18,
+            color: color,
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[600],
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey[800],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTransactionHistoryCard() {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 30,
+            spreadRadius: 0,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: TColo.primaryColor1.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  FontAwesomeIcons.chartLine,
+                  size: 20,
+                  color: TColo.primaryColor1,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Text(
+                'Recent Transactions',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey[800],
+                ),
+              ),
+              const Spacer(),
+              if (!isLoadingTransactions && transactions.isNotEmpty)
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: TColo.primaryColor1.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
                   child: Text(
-                    value ?? 'Not provided',
+                    '${transactions.length} transactions',
                     style: TextStyle(
-                      fontWeight: FontWeight.w500,
+                      color: TColo.primaryColor1,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
-                if (isLocal)
-                  Icon(Icons.phone_android, size: 16, color: Colors.green),
+            ],
+          ),
+          const SizedBox(height: 20),
+          isLoadingTransactions
+              ? _buildTransactionLoading()
+              : transactions.isEmpty
+                  ? _buildNoTransactions()
+                  : _buildTransactionsList(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTransactionLoading() {
+    return Container(
+      height: 200,
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(TColo.primaryColor1),
+              strokeWidth: 2,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Loading transactions...',
+              style: TextStyle(
+                color: Colors.grey[600],
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNoTransactions() {
+    return Container(
+      height: 120,
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              FontAwesomeIcons.receipt,
+              size: 32,
+              color: Colors.grey[400],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'No transactions found',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey[600],
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            Text(
+              'Your transaction history will appear here',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey[500],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTransactionsList() {
+    // Show only recent 5 transactions for compact view
+    final recentTransactions = transactions.take(5).toList();
+
+    return Column(
+      children: [
+        ...recentTransactions.map((tx) => _buildTransactionItem(tx)).toList(),
+        if (transactions.length > 5) ...[
+          const SizedBox(height: 16),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            decoration: BoxDecoration(
+              color: Colors.grey[100],
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey[300]!),
+            ),
+            child: Center(
+              child: Text(
+                '+${transactions.length - 5} more transactions',
+                style: TextStyle(
+                  color: Colors.grey[600],
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildTransactionItem(dynamic tx) {
+    final timestamp = tx['date'] as Timestamp?;
+    final weight = (tx['gramWeight'] ?? 0.0).toDouble();
+    final amount = (tx['amount'] ?? 0.0).toDouble();
+    final note = tx['note'] ?? '';
+    final transactionType = tx['transactionType'] ?? 0;
+    final isCredit = transactionType == 0;
+
+    final date = timestamp != null
+        ? DateFormat('MMM dd, yyyy').format(timestamp.toDate())
+        : 'N/A';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isCredit ? Colors.green[50] : Colors.red[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isCredit ? Colors.green[200]! : Colors.red[200]!,
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: isCredit ? Colors.green : Colors.red[400],
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Icon(
+              isCredit ? FontAwesomeIcons.plus : FontAwesomeIcons.minus,
+              size: 16,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '${weight.toStringAsFixed(2)} g',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey[800],
+                      ),
+                    ),
+                    Text(
+                      '₹${amount.toStringAsFixed(2)}',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: isCredit ? Colors.green[700] : Colors.red[700],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        note.isEmpty ? 'Gold transaction' : note,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    Text(
+                      date,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[500],
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
@@ -333,44 +800,250 @@ class _WebprofileState extends State<Webprofile> {
     );
   }
 
-  Widget _buildSectionTitle(String title) {
-    return Text(
-      title,
-      style: TextStyle(
-        fontSize: 18,
-        fontWeight: FontWeight.bold,
-        color: TColo.primaryColor1,
+  Widget _buildPersonalInfoCard() {
+    return _buildSectionCard(
+      title: 'Personal Information',
+      icon: Icons.person_outline,
+      children: [
+        _buildInfoTile(
+          icon: Icons.phone,
+          label: 'Phone',
+          value: localUserData?.phoneNo,
+        ),
+        _buildInfoTile(
+          icon: Icons.location_city,
+          label: 'Address',
+          value: localUserData?.address,
+        ),
+        _buildInfoTile(
+          icon: Icons.place,
+          label: 'Place',
+          value: localUserData?.place?.isNotEmpty == true
+              ? localUserData!.place
+              : 'Not specified',
+        ),
+        _buildInfoTile(
+            icon: Icons.store,
+            label: 'Branch',
+            value: localUserData?.branchName),
+        _buildInfoTile(
+          icon: Icons.public,
+          label: 'Country',
+          value: localUserData?.country,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildNomineeCard() {
+    return _buildSectionCard(
+      title: 'Nominee Details',
+      icon: Icons.family_restroom,
+      children: [
+        _buildInfoTile(
+          icon: Icons.person,
+          label: 'Name',
+          value: localUserData?.nominee?.isNotEmpty == true
+              ? localUserData!.nominee
+              : 'Not specified',
+        ),
+        _buildInfoTile(
+          icon: Icons.phone,
+          label: 'Phone',
+          value: localUserData?.nomineePhone?.isNotEmpty == true
+              ? localUserData!.nomineePhone
+              : 'Not specified',
+        ),
+        _buildInfoTile(
+          icon: Icons.people,
+          label: 'Relation',
+          value: localUserData?.nomineeRelation?.isNotEmpty == true
+              ? localUserData!.nomineeRelation
+              : 'Not specified',
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDocumentCard() {
+    return _buildSectionCard(
+      title: 'Documents',
+      icon: Icons.description,
+      children: [
+        _buildInfoTile(
+          icon: Icons.credit_card,
+          label: 'Aadhar',
+          value: localUserData?.adharCard,
+        ),
+        _buildInfoTile(
+          icon: Icons.badge,
+          label: 'PAN',
+          value: localUserData?.panCard,
+        ),
+        _buildInfoTile(
+          icon: Icons.pin_drop,
+          label: 'PIN Code',
+          value: localUserData?.pinCode?.isNotEmpty == true
+              ? localUserData!.pinCode
+              : 'Not specified',
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSectionCard({
+    required String title,
+    required IconData icon,
+    required List<Widget> children,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 30,
+            spreadRadius: 0,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: TColo.primaryColor1.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  icon,
+                  size: 20,
+                  color: TColo.primaryColor1,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey[800],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          ...children,
+        ],
       ),
     );
   }
 
-  Widget _buildInfoRow(String label, String? value) {
+  Widget _buildInfoTile({
+    required IconData icon,
+    required String label,
+    String? value,
+  }) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.only(bottom: 16),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Icon(
+            icon,
+            size: 18,
+            color: Colors.grey[500],
+          ),
+          const SizedBox(width: 12),
           SizedBox(
-            width: 120,
+            width: 80,
             child: Text(
               label,
               style: TextStyle(
                 fontWeight: FontWeight.w500,
                 color: Colors.grey[600],
+                fontSize: 14,
               ),
             ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 16),
           Expanded(
             child: Text(
               value ?? 'Not provided',
               style: TextStyle(
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[800],
+                fontSize: 14,
               ),
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildActionButtons() {
+    return Column(
+      children: [
+        Container(
+          width: double.infinity,
+          height: 56,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                TColo.primaryColor1,
+                TColo.primaryColor1.withOpacity(0.8),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: TColo.primaryColor1.withOpacity(0.3),
+                blurRadius: 20,
+                spreadRadius: 0,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: ElevatedButton.icon(
+            onPressed: () {
+              // Add edit profile functionality
+            },
+            icon: Icon(Icons.edit, color: Colors.white),
+            label: Text(
+              'Edit Profile',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.transparent,
+              shadowColor: Colors.transparent,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        LogoutButton(
+          onLogoutSuccess: () {
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (context) => WebHomeScreen()),
+              (route) => false,
+            );
+          },
+        ),
+      ],
     );
   }
 }
