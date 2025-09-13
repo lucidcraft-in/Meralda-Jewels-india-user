@@ -14,6 +14,7 @@ import '../model/branchModel.dart';
 import '../model/customerModel.dart';
 import '../providers/account_provider.dart';
 import '../providers/branchProvider.dart';
+import 'helperWidget.dart/errorDialog.dart';
 import 'webPayScreen.dart';
 
 class UserRegistrationDialog extends StatefulWidget {
@@ -27,6 +28,7 @@ class UserRegistrationDialog extends StatefulWidget {
 }
 
 class _UserRegistrationDialogState extends State<UserRegistrationDialog> {
+  final _scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
   final _formKey = GlobalKey<FormState>();
   final ImagePicker _picker = ImagePicker();
   // Form controllers
@@ -120,42 +122,47 @@ class _UserRegistrationDialogState extends State<UserRegistrationDialog> {
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      child: Container(
-        constraints: BoxConstraints(maxWidth: 850),
-        padding: EdgeInsets.all(isWeb ? 40 : 20),
-        child: Stack(
-          children: [
-            SingleChildScrollView(
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  children: [
-                    _buildHeader(),
-                    const SizedBox(height: 20),
+      child: ScaffoldMessenger(
+        key: _scaffoldMessengerKey,
+        child: Container(
+          constraints: BoxConstraints(maxWidth: 850),
+          padding: EdgeInsets.all(isWeb ? 40 : 20),
+          child: Stack(
+            children: [
+              SingleChildScrollView(
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    children: [
+                      _buildHeader(),
+                      const SizedBox(height: 20),
 
-                    // Main form fields in two columns for web
-                    isWeb ? _buildWebForm(activeAccount!) : _buildMobileForm(),
+                      // Main form fields in two columns for web
+                      isWeb
+                          ? _buildWebForm(activeAccount!)
+                          : _buildMobileForm(),
 
-                    const SizedBox(height: 30),
-                    _buildRegisterButton(activeAccount!),
-                  ],
+                      const SizedBox(height: 30),
+                      _buildRegisterButton(activeAccount!),
+                    ],
+                  ),
                 ),
               ),
-            ),
-            Align(
-              alignment: Alignment.topRight,
-              child: IconButton(
-                onPressed: () => Navigator.pop(context),
-                icon: Icon(Icons.close),
+              Align(
+                alignment: Alignment.topRight,
+                child: IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: Icon(Icons.close),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildWebForm(UserModel activeAccount) {
+  Widget _buildWebForm(SchemeUserModel activeAccount) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -202,13 +209,15 @@ class _UserRegistrationDialogState extends State<UserRegistrationDialog> {
 
               // Customer Name
               if (activeAccount.name == "")
-                _buildTextField("Customer Name", _nameController,
+                _buildTextField(
+                    "Customer Name", Icons.person_outline, _nameController,
                     isRequired: true),
               if (activeAccount.custId == "") const SizedBox(height: 16),
 
               // Customer ID
               if (activeAccount.custId == "")
-                _buildTextField("Customer ID", _custIdController,
+                _buildTextField(
+                    "Customer ID", Icons.badge_outlined, _custIdController,
                     isReadOnly: true),
               const SizedBox(height: 16),
 
@@ -216,6 +225,7 @@ class _UserRegistrationDialogState extends State<UserRegistrationDialog> {
               // if (_nameController.text == "")
               _buildTextField(
                 "Phone Number",
+                Icons.phone_outlined,
                 _phoneController,
                 isRequired: true,
                 keyboardType: TextInputType.phone,
@@ -226,12 +236,14 @@ class _UserRegistrationDialogState extends State<UserRegistrationDialog> {
                 },
               ),
               const SizedBox(height: 16),
-              _buildTextField("Scheme Amount", openingAmtCntrl),
+              _buildTextField(
+                  "Scheme Amount", Icons.attach_money, openingAmtCntrl),
               if (activeAccount.address == "") const SizedBox(height: 16),
               // Address
               if (activeAccount.address == "")
                 _buildTextField(
                   "Address",
+                  Icons.home_outlined,
                   _addressController,
                   isRequired: true,
                   maxLines: 3,
@@ -261,23 +273,27 @@ class _UserRegistrationDialogState extends State<UserRegistrationDialog> {
 
               if (_showAdditionalFields) ...[
                 if (activeAccount.name == "")
-                  _buildTextField("Email", _emailController),
+                  _buildTextField(
+                      "Email", Icons.email_outlined, _emailController),
                 if (activeAccount.name == "") const SizedBox(height: 16),
                 if (activeAccount.name == "")
-                  _buildTextField("Place", _placeController),
+                  _buildTextField(
+                      "Place", Icons.location_on_outlined, _placeController),
                 if (activeAccount.name == "") const SizedBox(height: 16),
                 if (activeAccount.name == "") _buildDateField("Date of Birth"),
                 if (activeAccount.name == "") const SizedBox(height: 16),
                 if (activeAccount.name == "")
-                  _buildTextField("Nominee", _nomineeController),
+                  _buildTextField(
+                      "Nominee", Icons.person_outline, _nomineeController),
                 if (activeAccount.name == "") const SizedBox(height: 16),
                 if (activeAccount.name == "")
-                  _buildTextField("Nominee Phone", _nomineePhoneController,
+                  _buildTextField("Nominee Phone", Icons.phone_outlined,
+                      _nomineePhoneController,
                       keyboardType: TextInputType.phone),
                 if (activeAccount.name == "") const SizedBox(height: 16),
                 if (activeAccount.name == "")
-                  _buildTextField(
-                      "Nominee Relation", _nomineeRelationController),
+                  _buildTextField("Nominee Relation", Icons.group_outlined,
+                      _nomineeRelationController),
                 if (activeAccount.name == "") const SizedBox(height: 16),
                 // _buildTextField("Aadhar Card", _aadharController),
                 // const SizedBox(height: 16),
@@ -294,7 +310,7 @@ class _UserRegistrationDialogState extends State<UserRegistrationDialog> {
     );
   }
 
-  Widget _buildKYCSection(UserModel user) {
+  Widget _buildKYCSection(SchemeUserModel user) {
     return Card(
       elevation: 4,
       child: Padding(
@@ -311,6 +327,7 @@ class _UserRegistrationDialogState extends State<UserRegistrationDialog> {
             if (user.adharCard == "")
               _buildTextField(
                 "Aadhar Number*",
+                Icons.numbers,
                 _aadharController,
                 isRequired: true,
                 keyboardType: TextInputType.number,
@@ -350,6 +367,7 @@ class _UserRegistrationDialogState extends State<UserRegistrationDialog> {
             if (user.panCard == "")
               _buildTextField(
                 "PAN Number*",
+                Icons.numbers,
                 _panController,
                 isRequired: true,
                 validator: (value) {
@@ -460,27 +478,42 @@ class _UserRegistrationDialogState extends State<UserRegistrationDialog> {
           }),
         ),
         const SizedBox(height: 16),
+        _buildCountryDropdown(),
+        // Expanded(
+        //   child: _buildDropdown(
+        //     label: "Country",
+        //     value: selectedCountry,
+        //     items: countryList,
+        //     onChanged: (val) => setState(() => selectedCountry = val),
+        //   ),
+        // ),
+        const SizedBox(height: 16),
+        _buildBranchDropdown(),
+        const SizedBox(height: 16),
 
         // Customer Name
-        _buildTextField("Customer Name", _nameController, isRequired: true),
+        _buildTextField("Customer Name", Icons.person_outline, _nameController,
+            isRequired: true),
         const SizedBox(height: 16),
 
         // Customer ID
-        _buildTextField("Customer ID", _custIdController, isReadOnly: true),
-        const SizedBox(height: 16),
+        _buildTextField("Customer ID", Icons.perm_identity, _custIdController,
+            isReadOnly: true),
+        // const SizedBox(height: 16),
 
-        // Order Advance Type
-        _buildDropdown(
-          label: "Order Advance",
-          value: selectedOdType,
-          items: orderAdvList,
-          onChanged: (val) => setState(() => selectedOdType = val),
-        ),
+        // // Order Advance Type
+        // _buildDropdown(
+        //   label: "Order Advance",
+        //   value: selectedOdType,
+        //   items: orderAdvList,
+        //   onChanged: (val) => setState(() => selectedOdType = val),
+        // ),
         const SizedBox(height: 16),
 
         // Phone Number
         _buildTextField(
           "Phone Number",
+          Icons.phone_outlined,
           _phoneController,
           isRequired: true,
           keyboardType: TextInputType.phone,
@@ -495,6 +528,7 @@ class _UserRegistrationDialogState extends State<UserRegistrationDialog> {
         // Address
         _buildTextField(
           "Address",
+          Icons.home_outlined,
           _addressController,
           isRequired: true,
           maxLines: 3,
@@ -540,24 +574,27 @@ class _UserRegistrationDialogState extends State<UserRegistrationDialog> {
 
         // Additional fields (conditionally shown)
         if (_showAdditionalFields) ...[
-          _buildTextField("Email", _emailController),
+          _buildTextField("Email", Icons.email_outlined, _emailController),
           const SizedBox(height: 16),
-          _buildTextField("Place", _placeController),
+          _buildTextField(
+              "Place", Icons.location_on_outlined, _placeController),
           const SizedBox(height: 16),
           _buildDateField("Date of Birth"),
           const SizedBox(height: 16),
-          _buildTextField("Nominee", _nomineeController),
+          _buildTextField("Nominee", Icons.person_outline, _nomineeController),
           const SizedBox(height: 16),
-          _buildTextField("Nominee Phone", _nomineePhoneController,
+          _buildTextField(
+              "Nominee Phone", Icons.phone_outlined, _nomineePhoneController,
               keyboardType: TextInputType.phone),
           const SizedBox(height: 16),
-          _buildTextField("Nominee Relation", _nomineeRelationController),
+          _buildTextField("Nominee Relation", Icons.group_outlined,
+              _nomineeRelationController),
           const SizedBox(height: 16),
-          _buildTextField("Aadhar Card", _aadharController),
+          _buildTextField("Aadhar Card", Icons.numbers, _aadharController),
           const SizedBox(height: 16),
-          _buildTextField("PAN Card", _panController),
+          _buildTextField("PAN Card", Icons.numbers, _panController),
           const SizedBox(height: 16),
-          _buildTextField("PIN Code", _pinCodeController,
+          _buildTextField("PIN Code", Icons.code, _pinCodeController,
               keyboardType: TextInputType.number),
           const SizedBox(height: 16),
         ],
@@ -588,6 +625,7 @@ class _UserRegistrationDialogState extends State<UserRegistrationDialog> {
 
   Widget _buildTextField(
     String label,
+    IconData icon,
     TextEditingController controller, {
     bool isRequired = false,
     bool isReadOnly = false,
@@ -601,10 +639,10 @@ class _UserRegistrationDialogState extends State<UserRegistrationDialog> {
       maxLines: maxLines,
       keyboardType: keyboardType,
       decoration: InputDecoration(
-        labelText: label + (isRequired ? ' *' : ''),
+        labelText: label + (isRequired ? '' : ''),
         filled: true,
         fillColor: Colors.grey[50],
-        prefixIcon: Icon(Icons.edit_outlined, color: TColo.primaryColor1),
+        prefixIcon: Icon(icon, color: TColo.primaryColor1),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: Colors.grey[300]!),
@@ -709,7 +747,7 @@ class _UserRegistrationDialogState extends State<UserRegistrationDialog> {
     }
   }
 
-  _buildRegisterButton(UserModel activeAc) {
+  _buildRegisterButton(SchemeUserModel activeAc) {
     return SizedBox(
       width: double.infinity,
       height: 55,
@@ -744,38 +782,35 @@ class _UserRegistrationDialogState extends State<UserRegistrationDialog> {
 
   bool isClick = false;
   bool _isLoading = false;
-  Future<void> _submitForm(UserModel user) async {
+  Future<void> _submitForm(SchemeUserModel user) async {
     if (isClick) return;
 
     // Validate form
     if (!_formKey.currentState!.validate()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Please fill all required fields correctly!'),
-          backgroundColor: Colors.red,
-        ),
+      showErrorDialog(
+        'Required',
+        'Please fill all required fields correctly!',
+        context,
       );
       return;
     }
 
     // Validate dropdown selections
     if (selectedSchemeType == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Please select both Scheme Type'),
-          backgroundColor: Colors.red,
-        ),
+      showErrorDialog(
+        'Select Scheme',
+        'Please select Scheme Type',
+        context,
       );
       return;
     }
 
     // Validate country and branch selection
     if (selectedCountry == null || selectedBranch == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Please select both Country and Branch'),
-          backgroundColor: Colors.red,
-        ),
+      showErrorDialog(
+        'Select Branch',
+        'Please select both Country and Branch',
+        context,
       );
       return;
     }
@@ -784,21 +819,26 @@ class _UserRegistrationDialogState extends State<UserRegistrationDialog> {
       if (_aadharFrontImageBytes == null ||
           _aadharBackImageBytes == null ||
           _panCardImageBytes == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Please upload all required documents!'),
-            backgroundColor: Colors.red,
-          ),
+        showErrorDialog(
+          'Document required',
+          'Please upload all required documents!',
+          context,
         );
         return;
       }
     }
-    if (double.parse(openingAmtCntrl.text) < 2000) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Opening amount cannot be less than 2000!'),
-          backgroundColor: Colors.red,
-        ),
+    if (openingAmtCntrl.text.isEmpty) {
+      showErrorDialog(
+        'Opening Amount Required',
+        'Please enter opening amount!',
+        context,
+      );
+      return;
+    } else if (double.parse(openingAmtCntrl.text) < 2000) {
+      showErrorDialog(
+        'Minimum Amount Required',
+        'Opening amount cannot be less than 2000!',
+        context,
       );
       return;
     }
@@ -810,120 +850,6 @@ class _UserRegistrationDialogState extends State<UserRegistrationDialog> {
       isClick = true;
       _isLoading = true;
     });
-
-    // try {
-    //   // Upload images
-    //   String? aadharFrontUrl = await _uploadImage(
-    //     file: _aadharFrontImage,
-    //     bytes: _aadharFrontImageBytes,
-    //     path: '${_custIdController.text}_aadhar_front.jpg',
-    //   );
-
-    //   String? aadharBackUrl = await _uploadImage(
-    //     file: _aadharBackImage,
-    //     bytes: _aadharBackImageBytes,
-    //     path: '${_custIdController.text}_aadhar_back.jpg',
-    //   );
-
-    //   String? panCardUrl = await _uploadImage(
-    //     file: _panCardImage,
-    //     bytes: _panCardImageBytes,
-    //     path: '${_custIdController.text}_pan_card.jpg',
-    //   );
-    //   if (aadharFrontUrl == null ||
-    //       aadharBackUrl == null ||
-    //       panCardUrl == null) {
-    //     throw 'Failed to upload one or more images';
-    //   }
-    //   // Create user model from form data
-    //   final user = UserModel(
-    //     createdDate: DateTime.now(),
-    //     id: '', // Will be generated by Firestore
-    //     name: _nameController.text,
-    //     custId: _custIdController.text,
-    //     phoneNo: _phoneController.text,
-    //     address: _addressController.text,
-    //     place: _placeController.text,
-    //     mailId: _emailController.text,
-    //     staffId: '', // Will be set based on logged-in staff
-    //     schemeType: selectedSchemeType!,
-    //     balance: 0,
-    //     openingAmount: double.parse(openingAmtCntrl.text),
-    //     token: '',
-    //     totalGram: 0,
-    //     branch: selectedBranchObject?.id ?? '',
-    //     branchName: selectedBranch ?? '',
-    //     dateofBirth: selectedDate ?? DateTime.now(),
-    //     nominee: _nomineeController.text,
-    //     nomineePhone: _nomineePhoneController.text,
-    //     nomineeRelation: _nomineeRelationController.text,
-    //     adharCard: _aadharController.text,
-    //     panCard: _panController.text,
-    //     pinCode: _pinCodeController.text,
-    //     staffName: '', // Will be set based on logged-in staff
-    //     tax: 0,
-    //     amc: 0,
-    //     country: selectedCountry ?? '',
-    //     aadharFrontUrl: aadharFrontUrl,
-    //     aadharBackUrl: aadharBackUrl,
-    //     panCardUrl: panCardUrl,
-    //   );
-
-    //   bool? isCreated = await Provider.of<User>(context, listen: false).create(
-    //       user,
-    //       _custIdController.text,
-    //       selectedSchemeType!,
-    //       '',
-    //       '',
-    //       selectedOdType!);
-
-    //   if (!isCreated!) {
-    //     ScaffoldMessenger.of(context).showSnackBar(
-    //       SnackBar(
-    //         content: Text('Customer created successfully!'),
-    //         backgroundColor: Colors.green,
-    //       ),
-    //     );
-    //     ScaffoldMessenger.of(context).showSnackBar(
-    //       SnackBar(
-    //         content: Text('you can login after verification complete'),
-    //         backgroundColor: Colors.green,
-    //       ),
-    //     );
-
-    //     // Close the dialog on success
-    //     Navigator.of(context).pop();
-    //   } else {
-    //     ScaffoldMessenger.of(context).showSnackBar(
-    //       SnackBar(
-    //         content: Text('Customer ID already exists!'),
-    //         backgroundColor: Colors.red,
-    //       ),
-    //     );
-    //   }
-    // } catch (err) {
-    //   showDialog(
-    //     context: context,
-    //     barrierDismissible: false,
-    //     builder: (ctx) => AlertDialog(
-    //       title: Text('Error'),
-    //       content: Text('Failed to create customer: $err'),
-    //       actions: [
-    //         TextButton(
-    //           child: Text('OK'),
-    //           onPressed: () => Navigator.of(ctx).pop(),
-    //         )
-    //       ],
-    //     ),
-    //   );
-    // } finally {
-    //   if (mounted) {
-    //     setState(() {
-    //       isClick = false;
-    //       _isLoading = false;
-    //     });
-    //   }
-    // }
 
     // Upload images first
     if (user.aadharFrontUrl == "") {
@@ -1028,7 +954,7 @@ class _UserRegistrationDialogState extends State<UserRegistrationDialog> {
     } else {
       print("------- add --------");
       try {
-        final user = UserModel(
+        final user = SchemeUserModel(
             createdDate: DateTime.now(),
             name: _nameController.text,
             custId: _custIdController.text,
@@ -1065,7 +991,8 @@ class _UserRegistrationDialogState extends State<UserRegistrationDialog> {
         //     .create(user, _custIdController.text, selectedSchemeType!, '', '',
         //         selectedOdType!);
         // ✅ Add document (auto-generated ID by Firestore)
-        final docRef = await FirebaseFirestore.instance.collection('user').add({
+        final docRef =
+            await FirebaseFirestore.instance.collection('schemeUsers').add({
           ...user.toMap(),
           "createdDate": FieldValue.serverTimestamp(),
           "updatedDate": FieldValue.serverTimestamp(),
@@ -1095,32 +1022,8 @@ class _UserRegistrationDialogState extends State<UserRegistrationDialog> {
             backgroundColor: Colors.green,
           ),
         );
-
-        // if (!isCreated!) {
-        // ScaffoldMessenger.of(context).showSnackBar(
-        //   SnackBar(
-        //     content: Text('Customer created successfully!'),
-        //     backgroundColor: Colors.green,
-        //   ),
-        // );
-        // ScaffoldMessenger.of(context).showSnackBar(
-        //   SnackBar(
-        //     content: Text('you can login after verification complete'),
-        //     backgroundColor: Colors.green,
-        //   ),
-        // );
-
-        // // Close the dialog on success
-        // Navigator.of(context).pop();
-        // } else {
-        //   ScaffoldMessenger.of(context).showSnackBar(
-        //     SnackBar(
-        //       content: Text('Customer ID already exists!'),
-        //       backgroundColor: Colors.red,
-        //     ),
-        //   );
-        // }
       } catch (err) {
+        print(err);
         showDialog(
           context: context,
           barrierDismissible: false,

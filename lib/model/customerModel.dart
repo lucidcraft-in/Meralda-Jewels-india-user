@@ -4,10 +4,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 /// Created → Pending → Approved/Rejected
 enum CustomerStatus { start, created, pending, approved, rejected }
 
-class UserModel {
+class SchemeUserModel {
   final String? id;
   final String name;
   final String custId;
+
   final String phoneNo;
   final String address;
   final String place;
@@ -39,7 +40,7 @@ class UserModel {
   final DateTime updatedDate;
   final CustomerStatus status;
 
-  UserModel({
+  SchemeUserModel({
     this.id,
     required this.name,
     required this.custId,
@@ -75,7 +76,7 @@ class UserModel {
     this.status = CustomerStatus.created,
   });
 
-  UserModel.fromData(Map<String, dynamic> data, String documentId)
+  SchemeUserModel.fromData(Map<String, dynamic> data, String documentId)
       : id = documentId,
         name = data['name']?.toString() ?? "",
         custId = data['custId']?.toString() ?? "",

@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
+import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
+
 class CustomFooter extends StatelessWidget {
   const CustomFooter({super.key});
 
@@ -22,7 +26,7 @@ class CustomFooter extends StatelessWidget {
                     style: TextStyle(color: Colors.black54, fontSize: 14),
                   ),
                   Image.asset(
-                    "assets/images/merladlog_white.png", // replace with your brand logo
+                    "assets/images/merladlog_white.png",
                     height: 60,
                   ),
                 ],
@@ -40,42 +44,28 @@ class CustomFooter extends StatelessWidget {
           ),
           const SizedBox(height: 30),
 
-          // 🔹 Payments
-          // Column(
-          //   children: [
-          //     const Text("Payments",
-          //         style: TextStyle(color: Colors.black54, fontSize: 14)),
-          //     const SizedBox(height: 8),
-          //     Image.asset(
-          //       "assets/payment_logo.png", // example CC Avenue logo
-          //       height: 30,
-          //     ),
-          //   ],
-          // ),
-          // const SizedBox(height: 30),
-
-          // 🔹 Links Row
+          // 🔹 Links Row (clickable)
           Wrap(
             alignment: WrapAlignment.center,
             spacing: 20,
-            children: const [
-              Text("Terms Of Use",
-                  style: TextStyle(color: Colors.black54, fontSize: 13)),
-              Text("Privacy Policy",
-                  style: TextStyle(color: Colors.black54, fontSize: 13)),
-              Text("Contact Us",
-                  style: TextStyle(color: Colors.black54, fontSize: 13)),
-              Text("FAQ",
-                  style: TextStyle(color: Colors.black54, fontSize: 13)),
-              Text("Feedback",
-                  style: TextStyle(color: Colors.black54, fontSize: 13)),
+            children: [
+              _footerLink(
+                "Terms Of Use",
+                "https://docs.google.com/document/d/1RuN2P5O6hEA3I3TBxqjVaXnNGhTdBLpxCmxzEHBmK10/edit?usp=sharing",
+              ),
+              _footerLink("Privacy Policy",
+                  "https://docs.google.com/document/d/1RuN2P5O6hEA3I3TBxqjVaXnNGhTdBLpxCmxzEHBmK10/edit?usp=sharing"),
+              _footerLink("Contact Us", "support@meraldajewels.com"),
+              _footerLink("FAQ", "support@meraldajewels.com"),
+              _footerLink("Feedback", "https://yourdomain.com/feedback"),
             ],
           ),
           const SizedBox(height: 20),
 
           // 🔹 Copyright
           const Text(
-            "Copyright © 2025 Under Meralda Jewels. All Rights Reserved.\nNo imagery or logos contained within this site may be used without the express permission of Meralda Jewels Group.",
+            "Copyright © 2025 Under Meralda Jewels. All Rights Reserved.\n"
+            "No imagery or logos contained within this site may be used without the express permission of Meralda Jewels Group.",
             textAlign: TextAlign.center,
             style: TextStyle(color: Colors.black54, fontSize: 12),
           ),
@@ -84,7 +74,30 @@ class CustomFooter extends StatelessWidget {
     );
   }
 
-  Widget _socialIcon(IconData icon) {
+  static Widget _footerLink(String text, String url) {
+    return InkWell(
+      onTap: () async {
+        final Uri uri = Uri.parse(url);
+        try {
+          if (await canLaunchUrl(uri)) {
+            await launchUrl(uri, mode: LaunchMode.externalApplication);
+          }
+        } catch (e) {
+          print(e);
+        }
+      },
+      child: Text(
+        text,
+        style: const TextStyle(
+          color: Colors.black54,
+          fontSize: 13,
+          decoration: TextDecoration.underline, // modern web style
+        ),
+      ),
+    );
+  }
+
+  static Widget _socialIcon(IconData icon) {
     return CircleAvatar(
       radius: 18,
       backgroundColor: Colors.grey.shade300,

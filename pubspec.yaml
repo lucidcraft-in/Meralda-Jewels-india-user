@@ -118,6 +118,8 @@ flutter:
     - assets/video/22e3a57cf3f14787ba9cfc940d6f56c7.mp4
     - assets/photos/.
     - assets/jewelleryLoc/.
+    - assets/schemeImg/Wishlist_doc.png
+    - assets/schemeImg/.
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware

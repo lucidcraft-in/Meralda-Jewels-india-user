@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:meralda_gold_user/model/customerModel.dart';
+import 'package:meralda_gold_user/web/widgets/noSchemeWidget.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -11,7 +12,7 @@ import '../../providers/user.dart';
 
 class rightPanalProfile extends StatefulWidget {
   rightPanalProfile({super.key, required this.user});
-  UserModel user;
+  SchemeUserModel user;
 
   @override
   State<rightPanalProfile> createState() => _rightPanalProfileState();
@@ -68,8 +69,8 @@ class _rightPanalProfileState extends State<rightPanalProfile>
     _animationController.forward();
   }
 
-  List<UserModel> userAccount = [];
-  getUserAccount(UserModel activeAccount) async {
+  List<SchemeUserModel> userAccount = [];
+  getUserAccount(SchemeUserModel activeAccount) async {
     print("----");
     _initializeData(activeAccount);
     getTransaction(activeAccount);
@@ -80,7 +81,7 @@ class _rightPanalProfileState extends State<rightPanalProfile>
     // });
   }
 
-  void _initializeData(UserModel activeAccount) {
+  void _initializeData(SchemeUserModel activeAccount) {
     setState(() {
       print("===============");
       print(activeAccount.openingAmount);
@@ -116,7 +117,7 @@ class _rightPanalProfileState extends State<rightPanalProfile>
   List transactions = [];
   double cashBalance = 0;
   double gramBalance = 0;
-  getTransaction(UserModel activeAccount) {
+  getTransaction(SchemeUserModel activeAccount) {
     db = TransactionProvider();
     dbUser = User();
     db!.initiliase();
@@ -154,206 +155,7 @@ class _rightPanalProfileState extends State<rightPanalProfile>
       return Container();
     }
     if (activeAccount.name == null || activeAccount.name.isEmpty) {
-      return Container(
-        padding: EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Icon
-            Container(
-              padding: EdgeInsets.all(32),
-              decoration: BoxDecoration(
-                color: Colors.orange.shade50,
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: Colors.orange.shade200, width: 2),
-              ),
-              child: Icon(
-                Icons.person_off_outlined,
-                size: 64,
-                color: Colors.orange.shade600,
-              ),
-            ),
-
-            SizedBox(height: 24),
-
-            // Title
-            Text(
-              'No Scheme Available',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey[800],
-              ),
-            ),
-
-            SizedBox(height: 12),
-
-            // Description
-            Text(
-              'This user doesn\'t have an active scheme.\nPlease contact support to set up a scheme.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey[600],
-                height: 1.5,
-              ),
-            ),
-
-            SizedBox(height: 32),
-
-            // Action Buttons
-            Column(
-              children: [
-                // Contact Support Button
-                // Container(
-                //   width: double.infinity,
-                //   height: 56,
-                //   decoration: BoxDecoration(
-                //     color: TColo.primaryColor1,
-                //     borderRadius: BorderRadius.circular(16),
-                //   ),
-                //   child: Material(
-                //     color: Colors.transparent,
-                //     child: InkWell(
-                //       onTap: () {
-                //         // Add your contact support logic here
-                //         ScaffoldMessenger.of(context).showSnackBar(
-                //           SnackBar(
-                //             content: Row(
-                //               children: [
-                //                 Icon(Icons.info, color: Colors.white),
-                //                 SizedBox(width: 8),
-                //                 Text("Contact support for scheme setup"),
-                //               ],
-                //             ),
-                //             backgroundColor: Colors.blue,
-                //             behavior: SnackBarBehavior.floating,
-                //             shape: RoundedRectangleBorder(
-                //                 borderRadius: BorderRadius.circular(8)),
-                //           ),
-                //         );
-                //       },
-                //       borderRadius: BorderRadius.circular(16),
-                //       child: Container(
-                //         alignment: Alignment.center,
-                //         child: Row(
-                //           mainAxisAlignment: MainAxisAlignment.center,
-                //           children: [
-                //             Icon(
-                //               Icons.support_agent,
-                //               color: Colors.white,
-                //               size: 20,
-                //             ),
-                //             SizedBox(width: 8),
-                //             Text(
-                //               'Contact Support',
-                //               style: TextStyle(
-                //                 color: Colors.white,
-                //                 fontSize: 16,
-                //                 fontWeight: FontWeight.bold,
-                //               ),
-                //             ),
-                //           ],
-                //         ),
-                //       ),
-                //     ),
-                //   ),
-                // ),
-
-                // SizedBox(height: 16),
-
-                // // Back Button
-                // Container(
-                //   width: double.infinity,
-                //   height: 56,
-                //   decoration: BoxDecoration(
-                //     color: Colors.grey.shade100,
-                //     borderRadius: BorderRadius.circular(16),
-                //     border: Border.all(color: Colors.grey.shade300),
-                //   ),
-                //   child: Material(
-                //     color: Colors.transparent,
-                //     child: InkWell(
-                //       onTap: () {
-                //         Navigator.of(context).pop();
-                //       },
-                //       borderRadius: BorderRadius.circular(16),
-                //       child: Container(
-                //         alignment: Alignment.center,
-                //         child: Row(
-                //           mainAxisAlignment: MainAxisAlignment.center,
-                //           children: [
-                //             Icon(
-                //               Icons.arrow_back,
-                //               color: Colors.grey[700],
-                //               size: 20,
-                //             ),
-                //             SizedBox(width: 8),
-                //             Text(
-                //               'Go Back',
-                //               style: TextStyle(
-                //                 color: Colors.grey[700],
-                //                 fontSize: 16,
-                //                 fontWeight: FontWeight.w600,
-                //               ),
-                //             ),
-                //           ],
-                //         ),
-                //       ),
-                //     ),
-                //   ),
-                // ),
-              ],
-            ),
-
-            SizedBox(height: 24),
-
-            // Info Card
-            Container(
-              padding: EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.blue.shade50,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.blue.shade200),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.info_outline,
-                    size: 20,
-                    color: Colors.blue.shade600,
-                  ),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Need Help?',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            color: Colors.blue.shade700,
-                            fontSize: 14,
-                          ),
-                        ),
-                        SizedBox(height: 4),
-                        Text(
-                          'Our support team will help you set up a scheme that suits your needs.',
-                          style: TextStyle(
-                            color: Colors.blue.shade600,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      );
+      return noSchemeSec();
     }
     return Container(
       padding: EdgeInsets.all(24),
@@ -668,7 +470,7 @@ class _rightPanalProfileState extends State<rightPanalProfile>
   }
 
   Widget _buildFormField({
-    required UserModel user,
+    required SchemeUserModel user,
     required String label,
     required TextEditingController controller,
     bool isRequired = true,
@@ -839,7 +641,7 @@ class _rightPanalProfileState extends State<rightPanalProfile>
     }
   }
 
-  Future<void> _saveForm(UserModel activeAc) async {
+  Future<void> _saveForm(SchemeUserModel activeAc) async {
     print(activeAc);
 
     if (activeAc.status == CustomerStatus.created) {

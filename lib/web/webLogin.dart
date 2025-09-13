@@ -1,17 +1,14 @@
 import 'dart:convert';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:meralda_gold_user/common/colo_extension.dart';
 import 'package:meralda_gold_user/web/webBasicRag.dart';
-import 'package:meralda_gold_user/web/webHome.dart';
-import 'package:meralda_gold_user/web/webPayScreen.dart';
-import 'package:printing/printing.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../common/colo_extension.dart';
 import '../providers/user.dart';
-import 'webRegistration.dart';
+import 'wbLogin/sendOtp.dart';
+import 'webPayScreen.dart';
 
 class WebLoginpage extends StatefulWidget {
   @override
@@ -86,19 +83,26 @@ class _WebLoginpageState extends State<WebLoginpage>
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
     final isWeb = screenWidth > 600;
-
+    final isSmallScreen = screenWidth < 400;
+    final isMediumScreen = screenWidth >= 400 && screenWidth < 600;
+    print(screenWidth);
     return Container(
       width: double.infinity,
       height: double.infinity,
       child: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: EdgeInsets.all(20),
+            padding: EdgeInsets.all(isSmallScreen ? 10 : 20),
             child: Container(
               padding: EdgeInsets.symmetric(horizontal: isWeb ? 0 : 15),
               constraints: BoxConstraints(
-                maxWidth: isWeb ? 450 : double.infinity,
+                maxWidth: isSmallScreen
+                    ? screenWidth * 0.95
+                    : isMediumScreen
+                        ? 400
+                        : 450,
               ),
               child: Stack(
                 children: [
@@ -108,34 +112,39 @@ class _WebLoginpageState extends State<WebLoginpage>
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Padding(
-                      padding: EdgeInsets.all(isWeb ? 40 : 30),
+                      padding: EdgeInsets.all(isSmallScreen
+                          ? 20
+                          : isMediumScreen
+                              ? 30
+                              : 40),
                       child: Form(
                         key: _formKey,
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             // Logo and Title
-                            _buildHeader(),
-                            SizedBox(height: 20),
+                            _buildHeader(isSmallScreen),
+                            // SizedBox(height: isSmallScreen ? 10 : 10),
 
                             // Error Card (positioned above phone field)
                             if (_showErrorCard) _buildErrorCard(),
-                            if (_showErrorCard) SizedBox(height: 15),
+                            if (_showErrorCard)
+                              SizedBox(height: isSmallScreen ? 10 : 15),
 
                             // Email Field
-                            _buildCustIdField(),
-                            SizedBox(height: 20),
+                            _buildCustIdField(isSmallScreen),
+                            SizedBox(height: isSmallScreen ? 15 : 20),
 
                             // Password Field
-                            _buildPasswordField(),
-                            SizedBox(height: 30),
+                            _buildPasswordField(isSmallScreen),
+                            SizedBox(height: isSmallScreen ? 20 : 30),
 
                             // Login Button
-                            _buildLoginButton(),
-                            SizedBox(height: 20),
+                            _buildLoginButton(isSmallScreen),
+                            SizedBox(height: isSmallScreen ? 15 : 20),
 
                             // Forgot Password
-                            _buildForgotPassword(),
+                            _buildForgotPassword(isSmallScreen),
                             TextButton(
                               onPressed: () {
                                 Navigator.pop(context);
@@ -144,7 +153,12 @@ class _WebLoginpageState extends State<WebLoginpage>
                                     barrierDismissible: false,
                                     builder: (context) => MobileNumberScreen());
                               },
-                              child: Text("New user? Register here"),
+                              child: Text(
+                                "New user? Register here",
+                                style: TextStyle(
+                                  fontSize: isSmallScreen ? 14 : 16,
+                                ),
+                              ),
                             ),
                           ],
                         ),
@@ -154,13 +168,16 @@ class _WebLoginpageState extends State<WebLoginpage>
                   Align(
                     alignment: Alignment.topRight,
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 10),
+                      padding: EdgeInsets.all(isSmallScreen ? 8 : 10),
                       child: IconButton(
-                          onPressed: () {
-                            Navigator.pop(context);
-                          },
-                          icon: Icon(Icons.close)),
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                        icon: Icon(
+                          Icons.close,
+                          size: isSmallScreen ? 20 : 24,
+                        ),
+                      ),
                     ),
                   ),
                 ],
@@ -232,19 +249,19 @@ class _WebLoginpageState extends State<WebLoginpage>
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(bool isSmallScreen) {
     return Column(
       children: [
         Container(
-            width: 200,
-            height: 200,
-            child:
-                Image(image: AssetImage("assets/images/merladlog_white.png"))),
+          width: isSmallScreen ? 100 : 200,
+          height: isSmallScreen ? 100 : 200,
+          child: Image(image: AssetImage("assets/images/merladlog_white.png")),
+        ),
       ],
     );
   }
 
-  Widget _buildCustIdField() {
+  Widget _buildCustIdField(bool isSmallScreen) {
     return TextFormField(
       controller: _phoneController,
       keyboardType: TextInputType.phone,
@@ -266,6 +283,10 @@ class _WebLoginpageState extends State<WebLoginpage>
         ),
         filled: true,
         fillColor: Colors.grey[50],
+        contentPadding: EdgeInsets.symmetric(
+          vertical: isSmallScreen ? 14 : 16,
+          horizontal: 16,
+        ),
       ),
       validator: (value) {
         if (value == null || value.isEmpty) {
@@ -276,7 +297,7 @@ class _WebLoginpageState extends State<WebLoginpage>
     );
   }
 
-  Widget _buildPasswordField() {
+  Widget _buildPasswordField(bool isSmallScreen) {
     return TextFormField(
       controller: _passwordController,
       obscureText: _obscurePassword,
@@ -287,8 +308,8 @@ class _WebLoginpageState extends State<WebLoginpage>
         suffixIcon: IconButton(
           icon: Icon(
             _obscurePassword
-                ? Icons.visibility_outlined
-                : Icons.visibility_off_outlined,
+                ? Icons.visibility_off_outlined
+                : Icons.visibility_outlined,
             color: Color(0xFF1B5E20),
           ),
           onPressed: () {
@@ -311,6 +332,10 @@ class _WebLoginpageState extends State<WebLoginpage>
         ),
         filled: true,
         fillColor: Colors.grey[50],
+        contentPadding: EdgeInsets.symmetric(
+          vertical: isSmallScreen ? 14 : 16,
+          horizontal: 16,
+        ),
       ),
       validator: (value) {
         if (value == null || value.isEmpty) {
@@ -324,10 +349,10 @@ class _WebLoginpageState extends State<WebLoginpage>
     );
   }
 
-  Widget _buildLoginButton() {
+  Widget _buildLoginButton(bool isSmallScreen) {
     return SizedBox(
       width: double.infinity,
-      height: 55,
+      height: isSmallScreen ? 48 : 55,
       child: ElevatedButton(
         onPressed: _isLoading ? null : _handleLogin,
         style: ElevatedButton.styleFrom(
@@ -350,7 +375,7 @@ class _WebLoginpageState extends State<WebLoginpage>
             : Text(
                 'Login',
                 style: TextStyle(
-                  fontSize: 18,
+                  fontSize: isSmallScreen ? 16 : 18,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -358,7 +383,7 @@ class _WebLoginpageState extends State<WebLoginpage>
     );
   }
 
-  Widget _buildForgotPassword() {
+  Widget _buildForgotPassword(bool isSmallScreen) {
     return TextButton(
       onPressed: () {
         _showErrorMessage('Forgot password feature coming soon!');
@@ -368,7 +393,7 @@ class _WebLoginpageState extends State<WebLoginpage>
         style: TextStyle(
           color: Color(0xFF1B5E20),
           fontWeight: FontWeight.w600,
-          fontSize: 16,
+          fontSize: isSmallScreen ? 14 : 16,
         ),
       ),
     );

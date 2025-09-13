@@ -7,44 +7,89 @@ class AccountProvider extends ChangeNotifier {
   double gramBalance = 0;
   double averagePrice = 6250.0;
   int selectedAccountIndex = 0;
+  bool _isLoading = false;
+  String? _errorMessage;
+
+  // Getter for loading state
+  bool get isLoading => _isLoading;
+
+  // Getter for error message
+  String? get errorMessage => _errorMessage;
 
   CollectionReference collectionReference =
       FirebaseFirestore.instance.collection('user');
+  CollectionReference schemeUsersCollectionReference =
+      FirebaseFirestore.instance.collection('schemeUsers');
 
-  List<UserModel> _accounts = [];
-  List<UserModel> get accounts => _accounts; // ✅ public getter
+  List<SchemeUserModel> _accounts = [];
+  List<SchemeUserModel> get accounts => _accounts; // ✅ public getter
 
-  UserModel? get currentAccount =>
+  SchemeUserModel? get currentAccount =>
       _accounts.isNotEmpty ? _accounts[selectedAccountIndex] : null;
 
   /// ✅ Load accounts once using phone number
   Future<void> loadAccounts(String mobileNo) async {
     try {
-      final querySnapshot = await collectionReference
+      // Set loading state to true
+      _isLoading = true;
+      _errorMessage = null;
+      notifyListeners();
+
+      // final querySnapshot = await collectionReference
+      //     .where("phone_no", isEqualTo: mobileNo)
+      //     .get();
+
+      // _accounts = querySnapshot.docs.map((doc) {
+      //   return SchemeUserModel.fromData({
+      //     "id": doc.id,
+      //     ...doc.data() as Map<String, dynamic>,
+      //   }, doc.id);
+      // }).toList();
+
+      //--------------------------
+      print("-----------------");
+      final schemeUsersSnapshot = await schemeUsersCollectionReference
           .where("phone_no", isEqualTo: mobileNo)
           .get();
-
-      _accounts = querySnapshot.docs.map((doc) {
-        return UserModel.fromData({
-          "id": doc.id,
-          ...doc.data() as Map<String, dynamic>,
-        }, doc.id);
+      print(schemeUsersSnapshot.docs.length);
+      // 🔹 Step 3: Map to model
+      _accounts = schemeUsersSnapshot.docs.map((doc) {
+        return SchemeUserModel.fromData(
+          {
+            "id": doc.id,
+            ...doc.data() as Map<String, dynamic>,
+          },
+          doc.id,
+        );
       }).toList();
-
+      print("====================");
+      print(_accounts);
       if (_accounts.isNotEmpty) {
         cashBalance = _accounts[0].balance?.toDouble() ?? 0.0;
         gramBalance = _accounts[0].totalGram?.toDouble() ?? 0.0;
         selectedAccountIndex = 0;
       }
 
+      // Set loading state to false after successful load
+      _isLoading = false;
       notifyListeners();
     } catch (e) {
+      // Set loading state to false and capture error
+      _isLoading = false;
+      _errorMessage = "Failed to load accounts: ${e.toString()}";
       debugPrint("Error loading accounts: $e");
+      notifyListeners();
     }
   }
 
+  /// ✅ Clear error message
+  void clearError() {
+    _errorMessage = null;
+    notifyListeners();
+  }
+
   /// ✅ Switch active account
-  void switchAccount(UserModel account, int index, BuildContext context) {
+  void switchAccount(SchemeUserModel account, int index, BuildContext context) {
     selectedAccountIndex = index;
     cashBalance = account.balance?.toDouble() ?? 0.0;
     gramBalance = account.totalGram?.toDouble() ?? 0.0;

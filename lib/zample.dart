@@ -16,6 +16,7 @@ import 'providers/banner.dart';
 import 'providers/branchProvider.dart';
 import 'providers/category.dart';
 import 'providers/goldrate.dart';
+import 'providers/otpProvider.dart';
 import 'providers/payment.dart';
 import 'providers/paymentBill.dart';
 import 'providers/paymentConfi.dart';
@@ -37,6 +38,7 @@ class _GoldJewelryAppState extends State<GoldJewelryApp> {
     SharedPreferences pref = await SharedPreferences.getInstance();
     if (pref.containsKey("user")) {
       final userData = pref.getString("user");
+      print(userData);
       if (userData != null) {
         return json.decode(userData);
       }
@@ -61,6 +63,7 @@ class _GoldJewelryAppState extends State<GoldJewelryApp> {
         ChangeNotifierProvider(create: (_) => PaymentDetails()),
         ChangeNotifierProvider(create: (_) => BranchProvider()),
         ChangeNotifierProvider(create: (_) => AccountProvider()),
+        ChangeNotifierProvider(create: (_) => OTPProvider()),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
@@ -96,7 +99,7 @@ class _GoldJewelryAppState extends State<GoldJewelryApp> {
                 return WebPayAmountScreen(
                   user: user,
                   userid: user["id"],
-                  custName: user["name"],
+                  custName: "",
                 );
               } else {
                 // If no user → go to Home

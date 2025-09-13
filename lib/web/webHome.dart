@@ -1,17 +1,10 @@
 import 'dart:convert';
-
 import 'dart:ui';
-
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:meralda_gold_user/common/colo_extension.dart';
-import 'package:meralda_gold_user/providers/user.dart';
-import 'package:meralda_gold_user/screens/transaction_screen.dart';
+import 'package:meralda_gold_user/web/webBasicRag.dart';
 import 'package:meralda_gold_user/web/webPayScreen.dart';
-import 'package:meralda_gold_user/web/webTransaction.dart';
-import 'package:meralda_gold_user/web/widgets/asuranceContainer.dart';
 import 'package:meralda_gold_user/web/widgets/calculator.dart';
 import 'package:meralda_gold_user/web/widgets/columnUi.dart';
 import 'package:meralda_gold_user/web/widgets/footerSection.dart';
@@ -19,13 +12,10 @@ import 'package:meralda_gold_user/web/widgets/jewelleryLocations.dart';
 import 'package:meralda_gold_user/web/widgets/planeSpec.dart';
 import 'package:meralda_gold_user/web/widgets/schemCard.dart';
 import 'package:meralda_gold_user/web/widgets/webgoldRate.dart';
-import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:video_player/video_player.dart';
-
-import '../providers/product.dart';
-import '../screens/profile.dart';
 import 'helperWidget.dart/switchCountry.dart';
+import 'wbLogin/sendOtp.dart';
 import 'webLogin.dart';
 import 'webProfile.dart';
 
@@ -39,11 +29,13 @@ class _WebHomeScreenState extends State<WebHomeScreen>
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late VideoPlayerController _controller;
+  late Animation<Offset> _slideAnimation;
   bool _isMuted = true;
   String _selectedFlag = "india";
   @override
   void initState() {
     super.initState();
+    _initAnimations();
     loadUserLocally();
     _animationController = AnimationController(
       duration: Duration(milliseconds: 1000),
@@ -61,6 +53,29 @@ class _WebHomeScreenState extends State<WebHomeScreen>
         _controller.setVolume(0); // start muted
         _controller.play();
       });
+  }
+
+  void _initAnimations() {
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeInOut,
+    ));
+
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeOutBack,
+    ));
   }
 
   String _userName = "";
@@ -114,6 +129,7 @@ class _WebHomeScreenState extends State<WebHomeScreen>
             final isLargeScreen = screenWidth > 1200;
             final isMediumScreen = screenWidth > 800;
             final isSmallScreen = screenWidth > 600;
+            final isExtraSmallScreen = screenWidth <= 400;
 
             return SingleChildScrollView(
               child: Container(
@@ -122,7 +138,8 @@ class _WebHomeScreenState extends State<WebHomeScreen>
                 ),
                 child: Column(
                   children: [
-                    _buildAppBar(isLargeScreen),
+                    _buildAppBar(isLargeScreen, isMediumScreen, isSmallScreen,
+                        isExtraSmallScreen),
                     // _buildWelcomeMessage(),
                     _buildContent(context, isLargeScreen, isMediumScreen,
                         isSmallScreen, user),
@@ -701,34 +718,93 @@ class _WebHomeScreenState extends State<WebHomeScreen>
     );
   }
 
-  Widget _buildAppBar(bool isLargeScreen) {
+  Widget _buildAppBar(bool isLargeScreen, bool isMediumScreen,
+      bool isSmallScreen, bool isExtraSmallScreen) {
+    // Calculate sizes based on screen dimensions
+    double logoHeight = isLargeScreen
+        ? MediaQuery.of(context).size.height * .15
+        : isMediumScreen
+            ? MediaQuery.of(context).size.height * .12
+            : isSmallScreen
+                ? MediaQuery.of(context).size.height * .10
+                : MediaQuery.of(context).size.height * .08;
+
+    double iconSize = isLargeScreen
+        ? 24
+        : isMediumScreen
+            ? 20
+            : isSmallScreen
+                ? 18
+                : 16;
+    double rightPadding = isLargeScreen
+        ? 50
+        : isMediumScreen
+            ? 30
+            : isSmallScreen
+                ? 20
+                : 10;
+    double spacing = isLargeScreen
+        ? 20
+        : isMediumScreen
+            ? 15
+            : isSmallScreen
+                ? 10
+                : 8;
+
     return Container(
       width: MediaQuery.of(context).size.width,
-      height: MediaQuery.of(context).size.height * .2,
+      height: isLargeScreen
+          ? MediaQuery.of(context).size.height * .2
+          : isMediumScreen
+              ? MediaQuery.of(context).size.height * .18
+              : isSmallScreen
+                  ? MediaQuery.of(context).size.height * .16
+                  : MediaQuery.of(context).size.height * .14,
       decoration: BoxDecoration(color: TColo.primaryColor1),
       child: SafeArea(
         child: Stack(
           children: [
             Center(
-              child: RotatedBox(
-                quarterTurns: 1, // 1 = 90° clockwise, 2 = 180°, 3 = 270°
-                child: Image(
-                  image: AssetImage("assets/images/logo_bg_white.png"),
-                  width: 350,
-                ),
+              child: Image.asset(
+                "assets/images/logo_bg_white.png",
+                height: logoHeight,
+                fit: BoxFit
+                    .contain, // Changed from fill to contain for better aspect ratio
               ),
             ),
             Positioned(
-              top: 10,
-              right: 50,
+              top: isLargeScreen
+                  ? 10
+                  : isMediumScreen
+                      ? 8
+                      : isSmallScreen
+                          ? 6
+                          : 4,
+              right: rightPadding,
               child: Container(
-                height: 100,
+                height: isLargeScreen
+                    ? 100
+                    : isMediumScreen
+                        ? 80
+                        : isSmallScreen
+                            ? 60
+                            : 50,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Country Dropdown
-                    CountryDropDown(),
-                    SizedBox(width: 20),
+                    // Country Dropdown with responsive sizing
+                    Container(
+                      width: isLargeScreen
+                          ? 120
+                          : isMediumScreen
+                              ? 100
+                              : isSmallScreen
+                                  ? 100
+                                  : 100,
+                      child: CountryDropDown(),
+                    ),
+                    SizedBox(width: spacing),
+
                     // if (_userName != "")
                     //   GestureDetector(
                     //     onTap: () {
@@ -746,9 +822,11 @@ class _WebHomeScreenState extends State<WebHomeScreen>
                     //     child: Icon(
                     //       FontAwesomeIcons.moneyBillTransfer,
                     //       color: TColo.primaryColor2,
+                    //       size: iconSize,
                     //     ),
                     //   ),
-                    // if (_userName != "") SizedBox(width: 20),
+                    // if (_userName != "") SizedBox(width: spacing),
+
                     // if (_userName != "")
                     //   GestureDetector(
                     //     onTap: () {
@@ -763,13 +841,15 @@ class _WebHomeScreenState extends State<WebHomeScreen>
                     //     child: Icon(
                     //       FontAwesomeIcons.history,
                     //       color: TColo.primaryColor2,
+                    //       size: iconSize,
                     //     ),
                     //   ),
                     // if (_userName != "")
-                    SizedBox(width: 20),
+
+                    SizedBox(width: spacing),
                     GestureDetector(
                       onTap: () {
-                        if (_userName != "") {
+                        if (user != null) {
                           print(user["id"]);
                           Navigator.push(
                             context,
@@ -788,6 +868,7 @@ class _WebHomeScreenState extends State<WebHomeScreen>
                       child: Icon(
                         FontAwesomeIcons.userTie,
                         color: TColo.primaryColor2,
+                        size: iconSize,
                       ),
                     ),
                   ],
@@ -892,26 +973,6 @@ class _WebHomeScreenState extends State<WebHomeScreen>
         final isWide = constraints.maxWidth > 600;
 
         return Container(
-            // height: isWide ? 480 : 220,
-            // decoration: BoxDecoration(
-            //   gradient: LinearGradient(
-            //     begin: Alignment.centerLeft,
-            //     end: Alignment.centerRight,
-            //     colors: [
-            //       TColo.primaryColor1,
-            //       Color(0xFF2E7D32),
-            //       Color(0xFF4CAF50)
-            //     ],
-            //   ),
-            //   borderRadius: BorderRadius.circular(20),
-            //   boxShadow: [
-            //     BoxShadow(
-            //       color: TColo.primaryColor1.withOpacity(0.3),
-            //       blurRadius: 15,
-            //       offset: Offset(0, 8),
-            //     ),
-            //   ],
-            // ),
             child: _controller.value.isInitialized
                 ? Stack(
                     children: [
@@ -939,42 +1000,7 @@ class _WebHomeScreenState extends State<WebHomeScreen>
                     height: 200,
                     color: Colors.black12,
                     child: Center(child: CircularProgressIndicator()),
-                  )
-            // Stack(
-            //   children: [
-            //     Positioned(
-            //       right: -20,
-            //       top: -20,
-            //       child: Container(
-            //         width: 100,
-            //         height: 100,
-            //         decoration: BoxDecoration(
-            //           shape: BoxShape.circle,
-            //           color: Colors.white.withOpacity(0.1),
-            //         ),
-            //       ),
-            //     ),
-            //     Positioned(
-            //       right: 50,
-            //       bottom: -30,
-            //       child: Container(
-            //         width: 80,
-            //         height: 80,
-            //         decoration: BoxDecoration(
-            //           shape: BoxShape.circle,
-            //           color: Colors.white.withOpacity(0.05),
-            //         ),
-            //       ),
-            //     ),
-            //     Padding(
-            //       padding: EdgeInsets.all(25),
-            //       child: isWide
-            //           ? _buildWideBannerContent()
-            //           : _buildNarrowBannerContent(),
-            //     ),
-            //   ],
-            // ),
-            );
+                  ));
       },
     );
   }
@@ -1772,7 +1798,8 @@ class _WebHomeScreenState extends State<WebHomeScreen>
             Center(
               child: Material(
                 color: Colors.transparent,
-                child: WebLoginpage(),
+                // child: WebLoginpage(),
+                child: MobileNumberScreen(),
               ),
             ),
           ],

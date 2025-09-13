@@ -122,7 +122,7 @@ class _WebPayAmountScreenState extends State<WebPayAmountScreen>
     });
   }
 
-  List<UserModel> userAccount = [];
+  List<SchemeUserModel> userAccount = [];
   getUserAccount() async {
     Future.microtask(() {
       if (widget.user?["phone_no"] != null) {
@@ -132,6 +132,8 @@ class _WebPayAmountScreenState extends State<WebPayAmountScreen>
   }
 
   Widget _buildAppBar(String type, String name, id, var user) {
+    print("-------------------");
+    print(user);
     return Container(
       width: MediaQuery.of(context).size.width,
       height: MediaQuery.of(context).size.height * .15,
@@ -140,46 +142,43 @@ class _WebPayAmountScreenState extends State<WebPayAmountScreen>
         child: Stack(
           children: [
             Center(
-              child: RotatedBox(
-                quarterTurns: 1, // 1 = 90° clockwise, 2 = 180°, 3 = 270°
-                child: Image(
-                  image: AssetImage("assets/images/logo_bg_white.png"),
-                  width: 400,
-                ),
+              child: Image(
+                image: AssetImage("assets/images/logo_bg_white.png"),
+                width: 200,
               ),
             ),
-            if (type != "load")
-              Positioned(
-                top: 10,
-                right: 50,
-                child: Container(
-                  height: 100,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      if (name != "") SizedBox(width: 20),
-                      GestureDetector(
-                        onTap: () {
-                          if (name != "") {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => WebHomeScreen(),
-                              ),
-                            );
-                          } else {
-                            // _showLoginDialog(context);
-                          }
-                        },
-                        child: Icon(
-                          FontAwesomeIcons.home,
-                          color: TColo.primaryColor2,
-                        ),
+            // if (type != "load")
+            Positioned(
+              top: 10,
+              right: 50,
+              child: Container(
+                height: 100,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (user != null) SizedBox(width: 20),
+                    GestureDetector(
+                      onTap: () {
+                        if (user != null) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => WebHomeScreen(),
+                            ),
+                          );
+                        } else {
+                          // _showLoginDialog(context);
+                        }
+                      },
+                      child: Icon(
+                        FontAwesomeIcons.home,
+                        color: TColo.primaryColor2,
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              )
+              ),
+            )
           ],
         ),
       ),
@@ -196,17 +195,22 @@ class _WebPayAmountScreenState extends State<WebPayAmountScreen>
     final accountProvider = context.watch<AccountProvider>();
     final accounts = accountProvider.accounts;
 
+    // Show loading state first
+    if (accountProvider.isLoading) {
+      return buildLoadingState();
+    }
+
     final activeAccount = accounts.isNotEmpty
         ? accounts[accountProvider.selectedAccountIndex]
         : null;
 
     // Show "No data found" when activeAccount is null
-    if (activeAccount == null) {
-      //  logout();
+    if (widget.user == null) {
       return Scaffold(
         backgroundColor: Colors.grey[50],
         body: Column(
           children: [
+            _buildAppBar("load", widget.custName!, widget.userid, widget.user),
             Expanded(
               child: Center(
                 child: Column(
@@ -253,40 +257,87 @@ class _WebPayAmountScreenState extends State<WebPayAmountScreen>
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 32),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // Optional refresh button
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            // Add refresh functionality here
+                            accountProvider.loadAccounts(activeAccount!
+                                .phoneNo); // Assuming you have a method to reload data
+                          },
+                          icon: Icon(
+                            Icons.refresh,
+                            color: Colors.white,
+                          ),
+                          label: Text(
+                            "Refresh",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: TColo.primaryColor1,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 32,
+                              vertical: 16,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 2,
+                          ),
+                        ),
+                        SizedBox(width: 10),
+                        ElevatedButton.icon(
+                          onPressed: () async {
+                            SharedPreferences preferences =
+                                await SharedPreferences.getInstance();
+                            await preferences.clear();
 
-                    // Optional refresh button
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        // Add refresh functionality here
-                        // You can call your data loading method
-                        setState(() {
-                          // Trigger a rebuild or reload data
-                        });
-                      },
-                      icon: Icon(
-                        Icons.refresh,
-                        color: Colors.white,
-                      ),
-                      label: Text(
-                        "Refresh",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
+                            // Close loading dialog
+                            Navigator.of(context).pop();
+
+                            Navigator.pushAndRemoveUntil(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => WebHomeScreen()),
+                              (route) => false,
+                            );
+                            // Show success message
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Logged out successfully'),
+                                backgroundColor: Colors.green,
+                              ),
+                            );
+                          },
+                          icon: Icon(FontAwesomeIcons.signOut,
+                              color: const Color.fromARGB(255, 151, 45, 37)),
+                          label: Text(
+                            "Logout",
+                            style: TextStyle(
+                              color: const Color.fromARGB(255, 151, 45, 37),
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 32,
+                              vertical: 16,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 2,
+                          ),
                         ),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: TColo.primaryColor1,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 32,
-                          vertical: 16,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        elevation: 2,
-                      ),
-                    ),
+                      ],
+                    )
                   ],
                 ),
               ),
@@ -306,24 +357,31 @@ class _WebPayAmountScreenState extends State<WebPayAmountScreen>
               // Mobile Layout - Stack panels vertically
               return Column(
                 children: [
-                  _buildAppBar("load", activeAccount!.name, activeAccount.id,
-                      activeAccount),
-                  if (widget.user!.isNotEmpty)
-                    Container(
-                      height: 300,
-                      child: buildLeftPanel(context),
-                    ),
-                  Expanded(
-                    child: rightPanalProfile(user: activeAccount!),
-                  ),
+                  // _buildAppBar("load", activeAccount.name, activeAccount.id,
+                  //     activeAccount),
+                  // Expanded(
+                  //   child: ListView(
+                  //     children: [
+                  //       if (widget.user!.isNotEmpty)
+                  //         Container(
+                  //           child: buildLeftPanel(context),
+                  //         ),
+                  //       // Remove Expanded and use Container with height
+                  //       Container(
+                  //         height: MediaQuery.of(context).size.height *
+                  //             0.6, // Adjust as needed
+                  //         child: rightPanalProfile(user: activeAccount),
+                  //       ),
+                  //     ],
+                  //   ),
+                  // ),
                 ],
               );
             } else {
               // Desktop Layout - Side by side panels
               return Column(
                 children: [
-                  _buildAppBar("locad", activeAccount.name, activeAccount.id,
-                      activeAccount),
+                  _buildAppBar("load", "", widget.user!["id"], widget.user),
                   Expanded(
                     child: Row(
                       children: [
@@ -332,10 +390,10 @@ class _WebPayAmountScreenState extends State<WebPayAmountScreen>
                             flex: 2,
                             child: buildLeftPanel(context),
                           ),
-                        Expanded(
-                          flex: 3,
-                          child: rightPanalProfile(user: activeAccount!),
-                        ),
+                        // Expanded(
+                        //   flex: 3,
+                        //   child: rightPanalProfile(user: activeAccount),
+                        // ),
                       ],
                     ),
                   ),
@@ -343,6 +401,32 @@ class _WebPayAmountScreenState extends State<WebPayAmountScreen>
               );
             }
           },
+        ),
+      ),
+    );
+  }
+
+// Add this method to show loading state
+  Widget buildLoadingState() {
+    return Scaffold(
+      backgroundColor: Colors.grey[50],
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(TColo.primaryColor1),
+              strokeWidth: 4,
+            ),
+            const SizedBox(height: 20),
+            Text(
+              "Loading account information...",
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey[600],
+              ),
+            ),
+          ],
         ),
       ),
     );

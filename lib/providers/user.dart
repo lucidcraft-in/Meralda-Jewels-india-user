@@ -21,15 +21,15 @@ class User with ChangeNotifier {
   CollectionReference collectionReference =
       FirebaseFirestore.instance.collection('user');
   // Map<String, UserModel> _user = {};
-  late List<UserModel> _user;
-  late List<UserModel> user;
+  late List<SchemeUserModel> _user;
+  late List<SchemeUserModel> user;
 
-  set listStaff(List<UserModel> val) {
+  set listStaff(List<SchemeUserModel> val) {
     _user = val;
     notifyListeners();
   }
 
-  List<UserModel> get listUsers => _user;
+  List<SchemeUserModel> get listUsers => _user;
 
   int get userCount {
     return _user.length;
@@ -231,7 +231,8 @@ class User with ChangeNotifier {
   //     print(e);
   //   }
   // }
-  Future<List<UserModel>> loginUser(String mobileNo, String password) async {
+  Future<List<SchemeUserModel>> loginUser(
+      String mobileNo, String password) async {
     try {
       final querySnapshot = await collectionReference
           .where("phone_no", isEqualTo: mobileNo)
@@ -240,7 +241,8 @@ class User with ChangeNotifier {
 
       if (querySnapshot.docs.isNotEmpty) {
         final users = querySnapshot.docs.map((doc) {
-          return UserModel.fromData(doc.data() as Map<String, dynamic>, doc.id);
+          return SchemeUserModel.fromData(
+              doc.data() as Map<String, dynamic>, doc.id);
         }).toList();
         print("==================");
         for (var u in users) {
@@ -257,7 +259,7 @@ class User with ChangeNotifier {
   }
 
   Future<bool?> create(
-      UserModel userModel,
+      SchemeUserModel userModel,
       String customerId,
       String schemeType,
       String assignStaff,

@@ -8,11 +8,13 @@ import '../webBasicRag.dart';
 import '../webProfile.dart';
 import '../webRegistration.dart';
 
-Widget buildLeftPanel(BuildContext context) {
+Widget buildLeftPanel(
+  BuildContext context,
+) {
   final accountProvider = context.watch<AccountProvider>();
   final accounts = accountProvider.accounts;
   print("===========");
-  ;
+
   final cashBalance = accountProvider.cashBalance;
   final gramBalance = accountProvider.gramBalance;
   final averagePrice = accountProvider.averagePrice;
@@ -160,7 +162,8 @@ Widget buildLeftPanel(BuildContext context) {
                                       CustomerStatus.pending ||
                                   activeAccount.status == CustomerStatus.start
                               ? "Pending"
-                              : UserModel.statusToString(activeAccount.status)
+                              : SchemeUserModel.statusToString(
+                                      activeAccount.status)
                                   .toString(),
                           style: TextStyle(color: Colors.white70, fontSize: 12),
                         ),
@@ -312,140 +315,8 @@ Widget buildLeftPanel(BuildContext context) {
   );
 }
 
-// Helper method for building account cards
-// Widget _buildAccountCard(UserModel account, int index, BuildContext context) {
-//   final accountProvider = context.watch<AccountProvider>();
-//   final isSelected = index == accountProvider.selectedAccountIndex;
-
-//   return GestureDetector(
-//     onTap: () => accountProvider.switchAccount(account, index, context),
-//     child: AnimatedContainer(
-//       duration: Duration(milliseconds: 200),
-//       margin: EdgeInsets.only(bottom: 8),
-//       padding: EdgeInsets.all(16),
-//       decoration: BoxDecoration(
-//         color: isSelected
-//             ? Colors.white.withOpacity(0.25)
-//             : Colors.white.withOpacity(0.08),
-//         borderRadius: BorderRadius.circular(12),
-//         border: Border.all(
-//           color: isSelected
-//               ? Colors.white.withOpacity(0.5)
-//               : Colors.white.withOpacity(0.1),
-//           width: isSelected ? 2.5 : 1,
-//         ),
-//         boxShadow: isSelected
-//             ? [
-//                 BoxShadow(
-//                   color: Colors.white.withOpacity(0.1),
-//                   blurRadius: 8,
-//                   offset: Offset(0, 2),
-//                 ),
-//               ]
-//             : [],
-//       ),
-//       child: Column(
-//         crossAxisAlignment: CrossAxisAlignment.start,
-//         children: [
-//           // --- header row
-//           Row(
-//             children: [
-//               Icon(
-//                 isSelected
-//                     ? Icons.account_circle
-//                     : Icons.account_circle_outlined,
-//                 color: Colors.white,
-//                 size: 20,
-//               ),
-//               SizedBox(width: 12),
-//               Expanded(
-//                 child: Column(
-//                   crossAxisAlignment: CrossAxisAlignment.start,
-//                   children: [
-//                     Text(
-//                       account.name ?? 'N/A',
-//                       style: TextStyle(
-//                         color: Colors.white,
-//                         fontSize: 14,
-//                         fontWeight:
-//                             isSelected ? FontWeight.w700 : FontWeight.w600,
-//                       ),
-//                     ),
-//                     Text(
-//                       'ID: ${account.custId ?? "N/A"}',
-//                       style: TextStyle(color: Colors.white70, fontSize: 12),
-//                     ),
-//                   ],
-//                 ),
-//               ),
-//               if (isSelected)
-//                 Container(
-//                   padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-//                   decoration: BoxDecoration(
-//                     color: Colors.green.withOpacity(0.4),
-//                     borderRadius: BorderRadius.circular(12),
-//                   ),
-//                   child: Row(
-//                     children: [
-//                       Icon(Icons.check_circle, color: Colors.white, size: 12),
-//                       SizedBox(width: 4),
-//                       Text("Active",
-//                           style: TextStyle(
-//                               color: Colors.white,
-//                               fontSize: 10,
-//                               fontWeight: FontWeight.w600)),
-//                     ],
-//                   ),
-//                 ),
-//             ],
-//           ),
-
-//           SizedBox(height: 12),
-
-//           // --- balances
-//           Row(
-//             children: [
-//               Expanded(
-//                 child: Column(
-//                   crossAxisAlignment: CrossAxisAlignment.start,
-//                   children: [
-//                     Text("Gold Balance",
-//                         style: TextStyle(color: Colors.white70, fontSize: 11)),
-//                     Text(
-//                       '${account.totalGram?.toStringAsFixed(3) ?? "0.000"} g',
-//                       style: TextStyle(
-//                           color: Colors.white,
-//                           fontSize: 13,
-//                           fontWeight: FontWeight.w600),
-//                     ),
-//                   ],
-//                 ),
-//               ),
-//               Expanded(
-//                 child: Column(
-//                   crossAxisAlignment: CrossAxisAlignment.start,
-//                   children: [
-//                     Text("Cash Balance",
-//                         style: TextStyle(color: Colors.white70, fontSize: 11)),
-//                     Text(
-//                       '₹${account.balance ?? "0"}',
-//                       style: TextStyle(
-//                           color: Colors.white,
-//                           fontSize: 13,
-//                           fontWeight: FontWeight.w600),
-//                     ),
-//                   ],
-//                 ),
-//               ),
-//             ],
-//           ),
-//         ],
-//       ),
-//     ),
-//   );
-// }
-
-Widget _buildAccountCard(UserModel account, int index, BuildContext context) {
+Widget _buildAccountCard(
+    SchemeUserModel account, int index, BuildContext context) {
   final accountProvider = context.watch<AccountProvider>();
   final isSelected = index == accountProvider.selectedAccountIndex;
 
