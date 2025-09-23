@@ -41,7 +41,6 @@ class _WebprofileState extends State<Webprofile> with TickerProviderStateMixin {
 
   @override
   void initState() {
-    print("-------");
     super.initState();
     _initAnimations();
     _loadUserLocally();
@@ -87,7 +86,6 @@ class _WebprofileState extends State<Webprofile> with TickerProviderStateMixin {
 
   var activeAccount;
   Future<void> _loadUserDataAndTransactions() async {
-    print("-----   -----");
     final accountProvider = context.read<AccountProvider>();
     final accounts = accountProvider.accounts;
     if (accounts.isNotEmpty) {
@@ -98,7 +96,6 @@ class _WebprofileState extends State<Webprofile> with TickerProviderStateMixin {
   }
 
   Future<void> _getTransactions(SchemeUserModel user) async {
-    print(user);
     if (user == null) return;
 
     db = TransactionProvider();
@@ -115,8 +112,6 @@ class _WebprofileState extends State<Webprofile> with TickerProviderStateMixin {
           isLoadingTransactions = false;
         });
       }
-      print("=========");
-      print(transactions);
     } catch (e) {
       if (mounted) {
         setState(() {
@@ -239,7 +234,7 @@ class _WebprofileState extends State<Webprofile> with TickerProviderStateMixin {
                 ],
               ),
               const SizedBox(height: 20),
-              _buildTransactionHistoryCard(),
+              // _buildTransactionHistoryCard(),
             ],
           ),
         ),
@@ -256,8 +251,8 @@ class _WebprofileState extends State<Webprofile> with TickerProviderStateMixin {
         const SizedBox(height: 20),
         _buildPersonalInfoCard(),
         const SizedBox(height: 20),
-        _buildTransactionHistoryCard(),
-        const SizedBox(height: 20),
+        // _buildTransactionHistoryCard(),
+        // const SizedBox(height: 20),
         Row(
           children: [
             Expanded(child: _buildNomineeCard()),
@@ -492,78 +487,78 @@ class _WebprofileState extends State<Webprofile> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildTransactionHistoryCard() {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 30,
-            spreadRadius: 0,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: TColo.primaryColor1.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  FontAwesomeIcons.chartLine,
-                  size: 20,
-                  color: TColo.primaryColor1,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Text(
-                'Recent Transactions',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey[800],
-                ),
-              ),
-              const Spacer(),
-              if (!isLoadingTransactions && transactions.isNotEmpty)
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: TColo.primaryColor1.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    '${transactions.length} transactions',
-                    style: TextStyle(
-                      color: TColo.primaryColor1,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          isLoadingTransactions
-              ? _buildTransactionLoading()
-              : transactions.isEmpty
-                  ? _buildNoTransactions()
-                  : _buildTransactionsList(),
-        ],
-      ),
-    );
-  }
+  // Widget _buildTransactionHistoryCard() {
+  //   return Container(
+  //     padding: const EdgeInsets.all(24),
+  //     decoration: BoxDecoration(
+  //       color: Colors.white,
+  //       borderRadius: BorderRadius.circular(24),
+  //       boxShadow: [
+  //         BoxShadow(
+  //           color: Colors.black.withOpacity(0.08),
+  //           blurRadius: 30,
+  //           spreadRadius: 0,
+  //           offset: const Offset(0, 8),
+  //         ),
+  //       ],
+  //     ),
+  //     child: Column(
+  //       crossAxisAlignment: CrossAxisAlignment.start,
+  //       children: [
+  //         Row(
+  //           children: [
+  //             Container(
+  //               width: 40,
+  //               height: 40,
+  //               decoration: BoxDecoration(
+  //                 color: TColo.primaryColor1.withOpacity(0.1),
+  //                 borderRadius: BorderRadius.circular(12),
+  //               ),
+  //               child: Icon(
+  //                 FontAwesomeIcons.chartLine,
+  //                 size: 20,
+  //                 color: TColo.primaryColor1,
+  //               ),
+  //             ),
+  //             const SizedBox(width: 16),
+  //             Text(
+  //               'Recent Transactions',
+  //               style: TextStyle(
+  //                 fontSize: 18,
+  //                 fontWeight: FontWeight.bold,
+  //                 color: Colors.grey[800],
+  //               ),
+  //             ),
+  //             const Spacer(),
+  //             if (!isLoadingTransactions && transactions.isNotEmpty)
+  //               Container(
+  //                 padding:
+  //                     const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+  //                 decoration: BoxDecoration(
+  //                   color: TColo.primaryColor1.withOpacity(0.1),
+  //                   borderRadius: BorderRadius.circular(20),
+  //                 ),
+  //                 child: Text(
+  //                   '${transactions.length} transactions',
+  //                   style: TextStyle(
+  //                     color: TColo.primaryColor1,
+  //                     fontSize: 12,
+  //                     fontWeight: FontWeight.w600,
+  //                   ),
+  //                 ),
+  //               ),
+  //           ],
+  //         ),
+  //         const SizedBox(height: 20),
+  //         isLoadingTransactions
+  //             ? _buildTransactionLoading()
+  //             : transactions.isEmpty
+  //                 ? _buildNoTransactions()
+  //                 : _buildTransactionsList(),
+  //       ],
+  //     ),
+  //   );
+  // }
 
   Widget _buildTransactionLoading() {
     return Container(
@@ -943,49 +938,49 @@ class _WebprofileState extends State<Webprofile> with TickerProviderStateMixin {
   Widget _buildActionButtons() {
     return Column(
       children: [
-        Container(
-          width: double.infinity,
-          height: 56,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                TColo.primaryColor1,
-                TColo.primaryColor1.withOpacity(0.8),
-              ],
-            ),
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: TColo.primaryColor1.withOpacity(0.3),
-                blurRadius: 20,
-                spreadRadius: 0,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: ElevatedButton.icon(
-            onPressed: () {
-              // Add edit profile functionality
-            },
-            icon: Icon(Icons.edit, color: Colors.white),
-            label: Text(
-              'Edit Profile',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.transparent,
-              shadowColor: Colors.transparent,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(height: 12),
+        // Container(
+        //   width: double.infinity,
+        //   height: 56,
+        //   decoration: BoxDecoration(
+        //     gradient: LinearGradient(
+        //       colors: [
+        //         TColo.primaryColor1,
+        //         TColo.primaryColor1.withOpacity(0.8),
+        //       ],
+        //     ),
+        //     borderRadius: BorderRadius.circular(16),
+        //     boxShadow: [
+        //       BoxShadow(
+        //         color: TColo.primaryColor1.withOpacity(0.3),
+        //         blurRadius: 20,
+        //         spreadRadius: 0,
+        //         offset: const Offset(0, 8),
+        //       ),
+        //     ],
+        //   ),
+        //   child: ElevatedButton.icon(
+        //     onPressed: () {
+        //       // Add edit profile functionality
+        //     },
+        //     icon: Icon(Icons.edit, color: Colors.white),
+        //     label: Text(
+        //       'Edit Profile',
+        //       style: TextStyle(
+        //         color: Colors.white,
+        //         fontSize: 16,
+        //         fontWeight: FontWeight.w600,
+        //       ),
+        //     ),
+        //     style: ElevatedButton.styleFrom(
+        //       backgroundColor: Colors.transparent,
+        //       shadowColor: Colors.transparent,
+        //       shape: RoundedRectangleBorder(
+        //         borderRadius: BorderRadius.circular(16),
+        //       ),
+        //     ),
+        //   ),
+        // ),
+        // const SizedBox(height: 12),
         LogoutButton(
           onLogoutSuccess: () {
             Navigator.pushAndRemoveUntil(

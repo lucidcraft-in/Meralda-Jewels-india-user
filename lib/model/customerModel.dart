@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 /// 🔹 Simple Customer Status Flow
 /// Created → Pending → Approved/Rejected
-enum CustomerStatus { start, created, pending, approved, rejected }
+enum CustomerStatus { pending, approved, rejected }
 
 class SchemeUserModel {
   final String? id;
@@ -73,7 +73,7 @@ class SchemeUserModel {
     this.password,
     required this.createdDate,
     required this.updatedDate,
-    this.status = CustomerStatus.created,
+    this.status = CustomerStatus.pending,
   });
 
   SchemeUserModel.fromData(Map<String, dynamic> data, String documentId)
@@ -208,10 +208,7 @@ class SchemeUserModel {
   /// 🔥 Fixed status mapping
   static CustomerStatus statusFromString(String value) {
     switch (value.toLowerCase()) {
-      case "start":
-        return CustomerStatus.start;
-      case "created":
-        return CustomerStatus.created; // ✅ Fixed
+      // ✅ Fixed
       case "pending":
         return CustomerStatus.pending; // ✅ Added
       case "approved":
@@ -219,16 +216,12 @@ class SchemeUserModel {
       case "rejected":
         return CustomerStatus.rejected;
       default:
-        return CustomerStatus.created;
+        return CustomerStatus.pending;
     }
   }
 
   static String statusToString(CustomerStatus status) {
     switch (status) {
-      case CustomerStatus.start:
-        return "start";
-      case CustomerStatus.created:
-        return "created";
       case CustomerStatus.pending:
         return "pending";
       case CustomerStatus.approved:

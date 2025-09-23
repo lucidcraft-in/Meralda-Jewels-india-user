@@ -103,8 +103,6 @@ class _CountryDropDownState extends State<CountryDropDown> {
   }
 
   void _onCountryChanged(String selectedCountry) {
-    print("Selected country: $selectedCountry");
-
     // Find the selected country details
     Map<String, String>? countryData = _countries.firstWhere(
       (country) => country["name"] == selectedCountry,

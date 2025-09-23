@@ -101,7 +101,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
                   ),
                   SizedBox(height: isSmallScreen ? 8 : 10),
                   Text(
-                    "Enter the 6-digit code sent to\n+91 ${widget.mobileNumber}",
+                    "Enter the code sent via WhatsApp to\n+91 ${widget.mobileNumber}",
                     style: TextStyle(
                       color: Colors.grey[600],
                       fontSize: isSmallScreen ? 14 : 16,
@@ -270,38 +270,60 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
 
       setState(() => _isLoading = false);
 
+      // switch (result["status"]) {
+      //   case "success":
+      //     final user = result["user"] as AppUser;
+      //     ScaffoldMessenger.of(context).showSnackBar(
+      //       SnackBar(content: Text("Welcome ${user.phoneNo}")),
+      //     );
+      //     Navigator.pop(context);
+      //     _showSuccessDialog(user.id, user);
+      //     break;
+
+      //   case "expired":
+      //     ScaffoldMessenger.of(context).showSnackBar(
+      //       const SnackBar(content: Text("OTP expired")),
+      //     );
+      //     break;
+
+      //   case "invalid":
+      //     ScaffoldMessenger.of(context).showSnackBar(
+      //       const SnackBar(content: Text("Invalid OTP")),
+      //     );
+      //     break;
+
+      //   case "not_found":
+      //     ScaffoldMessenger.of(context).showSnackBar(
+      //       const SnackBar(content: Text("User not found")),
+      //     );
+      //     break;
+
+      //   default:
+      //     ScaffoldMessenger.of(context).showSnackBar(
+      //       SnackBar(content: Text("Error: ${result["message"] ?? "Unknown"}")),
+      //     );
+      // }
       switch (result["status"]) {
         case "success":
           final user = result["user"] as AppUser;
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Welcome ${user.phoneNo}")),
-          );
           Navigator.pop(context);
           _showSuccessDialog(user.id, user);
           break;
 
         case "expired":
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("OTP expired")),
-          );
+          _showErrorDialog("Your OTP has expired. Please request a new one.");
           break;
 
         case "invalid":
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Invalid OTP")),
-          );
+          _showErrorDialog("The OTP you entered is invalid. Try again.");
           break;
 
         case "not_found":
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("User not found")),
-          );
+          _showErrorDialog("No account found for this number.");
           break;
 
         default:
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Error: ${result["message"] ?? "Unknown"}")),
-          );
+          _showErrorDialog("Error: ${result["message"] ?? "Unknown"}");
       }
     } catch (error) {
       setState(() => _isLoading = false);
@@ -309,6 +331,74 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
         SnackBar(content: Text("Error: ${error.toString()}")),
       );
     }
+  }
+
+  void _showErrorDialog(String message) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isSmallScreen = screenWidth < 400;
+    final isMediumScreen = screenWidth >= 400 && screenWidth < 600;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            constraints: BoxConstraints(
+              maxWidth: isSmallScreen
+                  ? screenWidth * 0.9
+                  : isMediumScreen
+                      ? 400
+                      : 450,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.error, color: Colors.red, size: 48),
+                const SizedBox(height: 15),
+                Text(
+                  "Verification Failed",
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.red[700],
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  message,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[700],
+                  ),
+                ),
+                const SizedBox(height: 25),
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: TColo.primaryColor1,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 12, horizontal: 25),
+                  ),
+                  child: const Text(
+                    "OK",
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   void _resendOTP() async {
@@ -379,7 +469,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
                 ),
                 const SizedBox(height: 20),
                 Text(
-                  "Account Created Successfully!",
+                  "Login Successfully!",
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -425,11 +515,14 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
                       ),
                       elevation: 0, // Remove shadow if needed
                     ),
-                    child: const Text(
-                      "Get Started",
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: const Text(
+                        "Get Started",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ),

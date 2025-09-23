@@ -15,9 +15,10 @@ class TransactionModel {
   final String staffId;
   final double gramPriceInvestDay;
   final double gramWeight;
-  final int branch;
-
-  final merchentTransactionId; //
+  final String branch;
+  final String staffName;
+  final String branchName;
+  final String merchentTransactionId;
   final String transactionMode;
 
   TransactionModel({
@@ -35,9 +36,55 @@ class TransactionModel {
     required this.gramPriceInvestDay,
     required this.gramWeight,
     required this.branch,
+    required this.branchName,
+    required this.staffName,
     required this.merchentTransactionId,
     required this.transactionMode,
   });
+
+  /// copyWith function to update only specific fields
+  TransactionModel copyWith({
+    String? id,
+    String? customerName,
+    String? customerId,
+    DateTime? date,
+    double? amount,
+    int? transactionType,
+    String? note,
+    String? invoiceNo,
+    String? category,
+    double? discount,
+    String? staffId,
+    double? gramPriceInvestDay,
+    double? gramWeight,
+    String? branch,
+    String? staffName,
+    String? branchName,
+    String? merchentTransactionId,
+    String? transactionMode,
+  }) {
+    return TransactionModel(
+      id: id ?? this.id,
+      customerName: customerName ?? this.customerName,
+      customerId: customerId ?? this.customerId,
+      date: date ?? this.date,
+      amount: amount ?? this.amount,
+      transactionType: transactionType ?? this.transactionType,
+      note: note ?? this.note,
+      invoiceNo: invoiceNo ?? this.invoiceNo,
+      category: category ?? this.category,
+      discount: discount ?? this.discount,
+      staffId: staffId ?? this.staffId,
+      gramPriceInvestDay: gramPriceInvestDay ?? this.gramPriceInvestDay,
+      gramWeight: gramWeight ?? this.gramWeight,
+      branch: branch ?? this.branch,
+      staffName: staffName ?? this.staffName,
+      branchName: branchName ?? this.branchName,
+      merchentTransactionId:
+          merchentTransactionId ?? this.merchentTransactionId,
+      transactionMode: transactionMode ?? this.transactionMode,
+    );
+  }
 }
 
 class TransactionProvider with ChangeNotifier {
@@ -51,6 +98,8 @@ class TransactionProvider with ChangeNotifier {
 
   CollectionReference collectionReferenceUser =
       FirebaseFirestore.instance.collection('user');
+  CollectionReference collectionReferenceSchemeUser =
+      FirebaseFirestore.instance.collection('schemeusers');
 
   CollectionReference collectionReferenceGoldrate =
       FirebaseFirestore.instance.collection('goldrate');
@@ -72,7 +121,7 @@ class TransactionProvider with ChangeNotifier {
     double averageRate = 0;
     double totalAverageRate = 0;
     try {
-      querySnapshot = await collectionReferenceUser.get();
+      querySnapshot = await collectionReferenceSchemeUser.get();
       goldRate = await collectionReferenceGoldrate.get();
       //  oldBalance = oldBal;
 
@@ -89,29 +138,29 @@ class TransactionProvider with ChangeNotifier {
         }
       }
 
-      if (transactionModel.transactionType == 0) {
-        // gram wait for recieve
-        gramWeight = transactionModel.amount! / goldRate.docs[0]['gram'];
-      } else {
-        // gram weight for purchase
-        transactionQuerySnapshot = await collectionReference
-            .orderBy('timestamp', descending: true)
-            .get();
+      // if (transactionModel.transactionType == 0) {
+      // gram wait for recieve
+      gramWeight = transactionModel.amount! / goldRate.docs[0]['gram'];
+      // } else {
+      //   // gram weight for purchase
+      //   transactionQuerySnapshot = await collectionReference
+      //       .orderBy('timestamp', descending: true)
+      //       .get();
 
-        if (averageRate != 0) {
-          gramWeight = transactionModel.amount! / averageRate;
-        }
-      }
+      //   if (averageRate != 0) {
+      //     gramWeight = transactionModel.amount! / averageRate;
+      //   }
+      // }
       double gramWeightFixed = double.parse(gramWeight.toStringAsFixed(4));
 
-      if (transactionModel.transactionType == 0) {
-        newbalance = oldBalance + transactionModel.amount!;
+      // if (transactionModel.transactionType == 0) {
+      newbalance = oldBalance + transactionModel.amount!;
 
-        gramTotalWeightFinal = gramTotalWeight + gramWeight;
-      } else if (transactionModel.transactionType == 1) {
-        newbalance = oldBalance - transactionModel.amount!;
-        gramTotalWeightFinal = gramTotalWeight - gramWeight;
-      }
+      gramTotalWeightFinal = gramTotalWeight + gramWeight;
+      // } else if (transactionModel.transactionType == 1) {
+      //   newbalance = oldBalance - transactionModel.amount!;
+      //   gramTotalWeightFinal = gramTotalWeight - gramWeight;
+      // }
 
       double gramTotalWeightFinalFixed =
           double.parse(gramTotalWeightFinal.toStringAsFixed(4));
@@ -212,13 +261,17 @@ class TransactionProvider with ChangeNotifier {
     double averageRate = 0;
     double totalAverageRate = 0;
     try {
-      querySnapshot = await collectionReferenceUser.get();
+      querySnapshot = await collectionReferenceSchemeUser.get();
       goldRate = await collectionReferenceGoldrate.get();
-
+      print("----- length --------");
+      print(usrId);
+      print(querySnapshot.docs.length);
       if (querySnapshot.docs.isNotEmpty) {
         for (var doc in querySnapshot.docs
             .where((element) => element.id.toString() == usrId.toString())
             .toList()) {
+          print("=== --- --- -- -- ====");
+          print(doc);
           oldBalance = doc["balance"].toDouble();
           gramTotalWeight = doc["total_gram"];
 
@@ -228,56 +281,60 @@ class TransactionProvider with ChangeNotifier {
         }
       }
 
-      if (transactionModel.transactionType == 0) {
-        if (tax > 0 && amc > 0) {
-// find mc value
-          double mcValue = (transactionModel.gramPriceInvestDay * amc) / 100;
-          // print("---- mcValue");
-          // print(mcValue);
-// find Gram Included mc
-          double gramIncludedMc = transactionModel.gramPriceInvestDay + mcValue;
-          // print("---- gramIncludedMc");
-          // print(gramIncludedMc);
-// find Tax value
-          double taxValue = (gramIncludedMc * tax) / 100;
-          // print("---- taxValue");
-          // print(taxValue);
-// find gramwightPrice
-          double priceValue = taxValue + gramIncludedMc;
-          // print("---- priceValue");
-          // print(priceValue);
-// find gramwightPrice
-          gramWeight = transactionModel.amount / priceValue;
-          // print("---- gramWeight");
-          // print(gramWeight);
-          // gramWeight = (transactionModel.amount -
-          //         (transactionModel.amount * tax / 100) -
-          //         (transactionModel.amount * amc / 100)) /
-          //     transactionModel.gramPriceInvestDay;
-        } else {
-          gramWeight =
-              transactionModel.amount / transactionModel.gramPriceInvestDay;
-        }
-      } else {
-        // gram weight for purchase
+      // if (transactionModel.transactionType == 0) {
+//       if (tax > 0 && amc > 0) {
+// // find mc value
+//         double mcValue = (transactionModel.gramPriceInvestDay * amc) / 100;
+//         // print("---- mcValue");
+//         // print(mcValue);
+// // find Gram Included mc
+//         double gramIncludedMc = transactionModel.gramPriceInvestDay + mcValue;
+//         // print("---- gramIncludedMc");
+//         // print(gramIncludedMc);
+// // find Tax value
+//         double taxValue = (gramIncludedMc * tax) / 100;
+//         // print("---- taxValue");
+//         // print(taxValue);
+// // find gramwightPrice
+//         double priceValue = taxValue + gramIncludedMc;
+//         // print("---- priceValue");
+//         // print(priceValue);
+// // find gramwightPrice
+//         gramWeight = transactionModel.amount / priceValue;
+//         // print("---- gramWeight");
+//         // print(gramWeight);
+//         // gramWeight = (transactionModel.amount -
+//         //         (transactionModel.amount * tax / 100) -
+//         //         (transactionModel.amount * amc / 100)) /
+//         //     transactionModel.gramPriceInvestDay;
+//       } else {
 
-        if (averageRate != 0) {
-          gramWeight = transactionModel.amount / averageRate;
-        }
-      }
+      gramWeight =
+          transactionModel.amount / transactionModel.gramPriceInvestDay;
+
+      // }
+      // } else {
+      //   // gram weight for purchase
+
+      //   if (averageRate != 0) {
+      //     gramWeight = transactionModel.amount / averageRate;
+      //   }
+      // }
       num gramWeightFixed = num.parse(gramWeight.toStringAsFixed(4));
-      print("---------- gramWeightFixed");
-      print(gramWeightFixed);
-      if (transactionModel.transactionType == 0) {
-        newbalance = oldBalance + transactionModel.amount;
-        if (transactionModel.discount != 0) {
-          newbalance = newbalance - transactionModel.discount;
-        }
-        gramTotalWeightFinal = gramTotalWeight + gramWeight;
-      } else if (transactionModel.transactionType == 1) {
-        newbalance = oldBalance - transactionModel.amount;
-        gramTotalWeightFinal = gramTotalWeight - gramWeight;
-      }
+
+      // if (transactionModel.transactionType == 0) {
+
+      newbalance = oldBalance + transactionModel.amount;
+
+      // if (transactionModel.discount != 0) {
+      //   newbalance = newbalance - transactionModel.discount;
+      // }
+      gramTotalWeightFinal = gramTotalWeight + gramWeight;
+
+      // } else if (transactionModel.transactionType == 1) {
+      //   newbalance = oldBalance - transactionModel.amount;
+      //   gramTotalWeightFinal = gramTotalWeight - gramWeight;
+      // }
 
       num gramTotalWeightFinalFixed =
           num.parse(gramTotalWeightFinal.toStringAsFixed(4));
@@ -306,7 +363,14 @@ class TransactionProvider with ChangeNotifier {
         "tax": tax,
         "amc": amc
       });
-      await collectionReferenceUser.doc(transactionModel.customerId).update({
+      print("==== ===== ====== ===== ======== = = = = ");
+      print(transactionModel.customerId);
+      print(newbalance);
+      print(gramTotalWeightFinalFixed);
+      print(transactionModel.amount);
+      await collectionReferenceSchemeUser
+          .doc(transactionModel.customerId)
+          .update({
         'balance': newbalance,
         'total_gram': gramTotalWeightFinalFixed,
         'openingAmount': transactionModel.amount

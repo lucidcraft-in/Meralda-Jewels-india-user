@@ -98,11 +98,11 @@ class _WebHomeScreenState extends State<WebHomeScreen>
         user = json.decode(userData);
 
         setState(() {
-          _userName = user['name'] ?? '';
+          _userName = user['id'] ?? '';
         });
       }
     } else {
-      _showLoginDialog(context);
+      showLoginDialog(context);
       setState(() {
         _userName = '';
       });
@@ -169,10 +169,15 @@ class _WebHomeScreenState extends State<WebHomeScreen>
           _buildNewArrivalBanner(),
           SizedBox(height: 20),
           // SsuranceContainer(),
-          RightSideImgSchemeCard(),
-          SizedBox(height: 20), GoldCalculatorScreen(),
+          RightSideImgSchemeCard(
+            userName: _userName,
+          ),
+          // SizedBox(height: 20), GoldCalculatorScreen(),
           SizedBox(height: 20),
-          LeftSideImgSchemeCard(),
+          LeftSideImgSchemeCard(
+            username: _userName,
+            user: user,
+          ),
 
           // _buildSubscriptionPlans(
           //     context, isLargeScreen, isMediumScreen, isSmallScreen),
@@ -435,7 +440,7 @@ class _WebHomeScreenState extends State<WebHomeScreen>
                     ),
                   );
                 } else {
-                  _showLoginDialog(context);
+                  showLoginDialog(context);
                 }
               },
               style: ElevatedButton.styleFrom(
@@ -553,7 +558,7 @@ class _WebHomeScreenState extends State<WebHomeScreen>
                     ),
                   );
                 } else {
-                  _showLoginDialog(context);
+                  showLoginDialog(context);
                 }
               },
               style: ElevatedButton.styleFrom(
@@ -805,52 +810,10 @@ class _WebHomeScreenState extends State<WebHomeScreen>
                     ),
                     SizedBox(width: spacing),
 
-                    // if (_userName != "")
-                    //   GestureDetector(
-                    //     onTap: () {
-                    //       Navigator.push(
-                    //         context,
-                    //         MaterialPageRoute(
-                    //           builder: (context) => WebPayAmountScreen(
-                    //             custName: _userName,
-                    //             userid: user["id"],
-                    //             user: user,
-                    //           ),
-                    //         ),
-                    //       );
-                    //     },
-                    //     child: Icon(
-                    //       FontAwesomeIcons.moneyBillTransfer,
-                    //       color: TColo.primaryColor2,
-                    //       size: iconSize,
-                    //     ),
-                    //   ),
-                    // if (_userName != "") SizedBox(width: spacing),
-
-                    // if (_userName != "")
-                    //   GestureDetector(
-                    //     onTap: () {
-                    //       Navigator.push(
-                    //         context,
-                    //         MaterialPageRoute(
-                    //           builder: (context) =>
-                    //               CustomerInvestmentWebScreen(),
-                    //         ),
-                    //       );
-                    //     },
-                    //     child: Icon(
-                    //       FontAwesomeIcons.history,
-                    //       color: TColo.primaryColor2,
-                    //       size: iconSize,
-                    //     ),
-                    //   ),
-                    // if (_userName != "")
-
                     SizedBox(width: spacing),
                     GestureDetector(
                       onTap: () {
                         if (user != null) {
-                          print(user["id"]);
                           Navigator.push(
                             context,
                             MaterialPageRoute(
@@ -862,7 +825,7 @@ class _WebHomeScreenState extends State<WebHomeScreen>
                             ),
                           );
                         } else {
-                          _showLoginDialog(context);
+                          showLoginDialog(context);
                         }
                       },
                       child: Icon(
@@ -969,7 +932,6 @@ class _WebHomeScreenState extends State<WebHomeScreen>
   Widget _buildNewArrivalBanner() {
     return LayoutBuilder(
       builder: (context, constraints) {
-        print(constraints.maxWidth);
         final isWide = constraints.maxWidth > 600;
 
         return Container(
@@ -1161,117 +1123,6 @@ class _WebHomeScreenState extends State<WebHomeScreen>
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildGoldRates(bool isMediumScreen) {
-    return Container(
-      padding: EdgeInsets.all(25),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFFFFF8E1), Color(0xFFFFF3C4)],
-        ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.orange.withOpacity(0.1),
-            blurRadius: 15,
-            offset: Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 50,
-                height: 50,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      TColo.primaryColor1,
-                      TColo.primaryColor1,
-                    ],
-                  ),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(Icons.trending_up, color: Colors.white, size: 25),
-              ),
-              SizedBox(width: 15),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "Today's Gold Rate",
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF1B5E20),
-                      ),
-                    ),
-                    Text(
-                      'Live market prices',
-                      style: TextStyle(
-                        color: Colors.grey[700],
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 15, vertical: 8),
-                decoration: BoxDecoration(
-                  color: Color(0xFF1B5E20),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    SizedBox(width: 5),
-                    Text(
-                      'LIVE',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 25),
-          isMediumScreen ? _buildWideGoldRates() : _buildNarrowGoldRates(),
-          SizedBox(height: 15),
-          Row(
-            children: [
-              Icon(Icons.access_time, size: 16, color: Colors.grey[600]),
-              SizedBox(width: 5),
-              Text(
-                'Last updated: 17:15',
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 13,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
     );
   }
 
@@ -1702,7 +1553,6 @@ class _WebHomeScreenState extends State<WebHomeScreen>
         // }
         // } else {
         if (_userName != "") {
-          print(user["id"]);
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -1714,7 +1564,7 @@ class _WebHomeScreenState extends State<WebHomeScreen>
             ),
           );
         } else {
-          _showLoginDialog(context);
+          showLoginDialog(context);
         }
         // }
       },
@@ -1778,39 +1628,39 @@ class _WebHomeScreenState extends State<WebHomeScreen>
       ),
     );
   }
+}
 
-  void _showLoginDialog(BuildContext context) {
-    showGeneralDialog(
-      context: context,
-      // barrierDismissible: false,
-      barrierLabel: 'Login',
-      transitionDuration: Duration(milliseconds: 300),
-      pageBuilder: (context, animation, secondaryAnimation) {
-        return Stack(
-          children: [
-            // Blurred background
-            BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
-              child: Container(
-                color: Colors.black.withOpacity(0.3),
-              ),
+void showLoginDialog(BuildContext context) {
+  showGeneralDialog(
+    context: context,
+    // barrierDismissible: false,
+    barrierLabel: 'Login',
+    transitionDuration: Duration(milliseconds: 300),
+    pageBuilder: (context, animation, secondaryAnimation) {
+      return Stack(
+        children: [
+          // Blurred background
+          BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
+            child: Container(
+              color: Colors.black.withOpacity(0.3),
             ),
-            Center(
-              child: Material(
-                color: Colors.transparent,
-                // child: WebLoginpage(),
-                child: MobileNumberScreen(),
-              ),
+          ),
+          Center(
+            child: Material(
+              color: Colors.transparent,
+              // child: WebLoginpage(),
+              child: MobileNumberScreen(),
             ),
-          ],
-        );
-      },
-      transitionBuilder: (context, animation, secondaryAnimation, child) {
-        return FadeTransition(
-          opacity: animation,
-          child: child,
-        );
-      },
-    );
-  }
+          ),
+        ],
+      );
+    },
+    transitionBuilder: (context, animation, secondaryAnimation, child) {
+      return FadeTransition(
+        opacity: animation,
+        child: child,
+      );
+    },
+  );
 }

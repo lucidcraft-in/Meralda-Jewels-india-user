@@ -19,7 +19,7 @@ class AccountProvider extends ChangeNotifier {
   CollectionReference collectionReference =
       FirebaseFirestore.instance.collection('user');
   CollectionReference schemeUsersCollectionReference =
-      FirebaseFirestore.instance.collection('schemeUsers');
+      FirebaseFirestore.instance.collection('schemeusers');
 
   List<SchemeUserModel> _accounts = [];
   List<SchemeUserModel> get accounts => _accounts; // ✅ public getter
@@ -47,7 +47,7 @@ class AccountProvider extends ChangeNotifier {
       // }).toList();
 
       //--------------------------
-      print("-----------------");
+      print("--- ---- ------ ----");
       final schemeUsersSnapshot = await schemeUsersCollectionReference
           .where("phone_no", isEqualTo: mobileNo)
           .get();
@@ -94,44 +94,54 @@ class AccountProvider extends ChangeNotifier {
     cashBalance = account.balance?.toDouble() ?? 0.0;
     gramBalance = account.totalGram?.toDouble() ?? 0.0;
 
+    final screenWidth = MediaQuery.of(context).size.width;
+    final snackbarWidth = 400.0; // Fixed width for the snackbar
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Row(
-          children: [
-            Icon(
-              Icons.check_circle,
-              color: Colors.white,
-              size: 20,
-            ),
-            SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'Account Switched Successfully',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                  ),
-                  SizedBox(height: 2),
-                  Text(
-                    'Now using: ${account.name}',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.white70,
-                    ),
-                  ),
-                ],
+        content: Container(
+          width: snackbarWidth,
+          child: Row(
+            children: [
+              Icon(
+                Icons.check_circle,
+                color: Colors.white,
+                size: 20,
               ),
-            ),
-          ],
+              SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Account Switched Successfully',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      'Now using: ${account.name}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.white70,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
         backgroundColor: Colors.green.shade600,
         behavior: SnackBarBehavior.floating,
-        margin: EdgeInsets.all(16),
+        margin: EdgeInsets.only(
+          left: screenWidth - snackbarWidth - 32, // Position from right
+          bottom: 16,
+          right: 16,
+        ),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(10),
         ),

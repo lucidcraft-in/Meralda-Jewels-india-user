@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
 
 import '../../common/colo_extension.dart';
@@ -70,7 +71,7 @@ class _MobileNumberScreenState extends State<MobileNumberScreen> {
                     ),
                     SizedBox(height: isSmallScreen ? 8 : 10),
                     Text(
-                      "We'll send you a verification code to confirm your number",
+                      "We’ll send you a verification code on WhatsApp",
                       style: TextStyle(
                         color: Colors.grey[600],
                         fontSize: isSmallScreen ? 14 : 16,
@@ -160,13 +161,23 @@ class _MobileNumberScreenState extends State<MobileNumberScreen> {
                                       Colors.white),
                                 ),
                               )
-                            : Text(
-                                "Send OTP",
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: isSmallScreen ? 16 : 18,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                            : Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    FontAwesomeIcons.whatsapp,
+                                    color: Colors.white,
+                                  ),
+                                  SizedBox(width: 10),
+                                  Text(
+                                    "Send OTP",
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: isSmallScreen ? 16 : 18,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
                               ),
                       ),
                     ),
@@ -223,30 +234,6 @@ class _MobileNumberScreenState extends State<MobileNumberScreen> {
     );
   }
 
-  // void _sendOTP() async {
-  //   if (_formKey.currentState!.validate()) {
-  //     setState(() => _isLoading = true);
-
-  //     // Simulate API call
-  //     await Future.delayed(const Duration(seconds: 2));
-
-  //     setState(() => _isLoading = false);
-
-  //     // Navigate to OTP screen
-  //     if (mounted) {
-  //       Navigator.pop(context);
-  //       showDialog(
-  //         context: context,
-  //         barrierDismissible: false,
-  //         builder: (context) =>
-  //             // UserRegistrationDialog(),
-  //             OTPVerificationScreen(
-  //           mobileNumber: _mobileController.text,
-  //         ),
-  //       );
-  //     }
-  //   }
-  // }
   void _sendOTP() async {
     if (_formKey.currentState!.validate()) {
       final otpProvider = Provider.of<OTPProvider>(context, listen: false);

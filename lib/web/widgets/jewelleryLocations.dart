@@ -76,11 +76,11 @@ class LocationSection extends StatelessWidget {
                         textAlign: TextAlign.center,
                         style: const TextStyle(fontSize: 12),
                       ),
-                      const SizedBox(height: 8),
-                      ElevatedButton(
-                        onPressed: () {},
-                        child: const Text("LOCATE US"),
-                      )
+                      // const SizedBox(height: 8),
+                      // ElevatedButton(
+                      //   onPressed: () {},
+                      //   child: const Text("LOCATE US"),
+                      // )
                     ],
                   ),
                 );

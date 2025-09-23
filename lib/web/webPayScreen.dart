@@ -7,6 +7,7 @@ import 'package:meralda_gold_user/model/customerModel.dart';
 import 'package:meralda_gold_user/web/helperWidget.dart/rightProfile.dart';
 import 'package:meralda_gold_user/web/webHome.dart';
 import 'package:meralda_gold_user/web/webProfile.dart';
+import 'package:meralda_gold_user/web/widgets/noSchemeWidget.dart';
 import 'package:provider/provider.dart';
 import 'package:meralda_gold_user/common/colo_extension.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -66,7 +67,9 @@ class _WebPayAmountScreenState extends State<WebPayAmountScreen>
     staffId: '',
     gramPriceInvestDay: 0,
     gramWeight: 0,
-    branch: 0,
+    branch: "",
+    branchName: "",
+    staffName: "",
     merchentTransactionId: "",
     transactionMode: 'Direct',
   );
@@ -97,43 +100,41 @@ class _WebPayAmountScreenState extends State<WebPayAmountScreen>
   }
 
   bool isTransaFirst = false;
-  TransactionProvider? db;
-  User? dbUser;
-  List transactions = [];
-  double cashBalance = 0;
-  double gramBalance = 0;
-  getTransaction() {
-    db = TransactionProvider();
-    dbUser = User();
-    db!.initiliase();
-    print(widget.user!['id']);
-    db!.read(widget.user!['id']).then((value) {
-      if (value!.isEmpty) {
-        setState(() {
-          isTransaFirst = false;
-        });
-      } else {
-        setState(() {
-          cashBalance = value![1];
-          gramBalance = value![2];
-          isTransaFirst = true;
-        });
-      }
-    });
-  }
+  // TransactionProvider? db;
+  // User? dbUser;
+  // List transactions = [];
+  // double cashBalance = 0;
+  // double gramBalance = 0;
+  // getTransaction() {
+  //   db = TransactionProvider();
+  //   dbUser = User();
+  //   db!.initiliase();
+  //   print(widget.user!['id']);
+  //   db!.read(widget.user!['id']).then((value) {
+  //     if (value!.isEmpty) {
+  //       setState(() {
+  //         isTransaFirst = false;
+  //       });
+  //     } else {
+  //       setState(() {
+  //         cashBalance = value![1];
+  //         gramBalance = value![2];
+  //         isTransaFirst = true;
+  //       });
+  //     }
+  //   });
+  // }
 
   List<SchemeUserModel> userAccount = [];
   getUserAccount() async {
     Future.microtask(() {
-      if (widget.user?["phone_no"] != null) {
-        context.read<AccountProvider>().loadAccounts(widget.user!["phone_no"]);
+      if (widget.user?["phoneNo"] != null) {
+        context.read<AccountProvider>().loadAccounts(widget.user!["phoneNo"]);
       }
     });
   }
 
   Widget _buildAppBar(String type, String name, id, var user) {
-    print("-------------------");
-    print(user);
     return Container(
       width: MediaQuery.of(context).size.width,
       height: MediaQuery.of(context).size.height * .15,
@@ -357,24 +358,27 @@ class _WebPayAmountScreenState extends State<WebPayAmountScreen>
               // Mobile Layout - Stack panels vertically
               return Column(
                 children: [
-                  // _buildAppBar("load", activeAccount.name, activeAccount.id,
-                  //     activeAccount),
-                  // Expanded(
-                  //   child: ListView(
-                  //     children: [
-                  //       if (widget.user!.isNotEmpty)
-                  //         Container(
-                  //           child: buildLeftPanel(context),
-                  //         ),
-                  //       // Remove Expanded and use Container with height
-                  //       Container(
-                  //         height: MediaQuery.of(context).size.height *
-                  //             0.6, // Adjust as needed
-                  //         child: rightPanalProfile(user: activeAccount),
-                  //       ),
-                  //     ],
-                  //   ),
-                  // ),
+                  _buildAppBar("load", "", widget.user!["id"], widget.user),
+                  Expanded(
+                    child: ListView(
+                      children: [
+                        if (widget.user!.isNotEmpty)
+                          Container(
+                            child: LeftPanel(
+                              user: widget.user,
+                            ),
+                          ),
+                        // Remove Expanded and use Container with height
+                        Container(
+                          height: MediaQuery.of(context).size.height *
+                              0.6, // Adjust as needed
+                          child: activeAccount != null
+                              ? RightPanalProfile(user: activeAccount!)
+                              : noSchemeSec(),
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               );
             } else {
@@ -388,12 +392,16 @@ class _WebPayAmountScreenState extends State<WebPayAmountScreen>
                         if (widget.user!.isNotEmpty)
                           Expanded(
                             flex: 2,
-                            child: buildLeftPanel(context),
+                            child: LeftPanel(
+                              user: widget.user,
+                            ),
                           ),
-                        // Expanded(
-                        //   flex: 3,
-                        //   child: rightPanalProfile(user: activeAccount),
-                        // ),
+                        Expanded(
+                          flex: 3,
+                          child: activeAccount != null
+                              ? RightPanalProfile(user: activeAccount!)
+                              : noSchemeSec(),
+                        ),
                       ],
                     ),
                   ),

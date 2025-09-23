@@ -42,8 +42,7 @@ class _CustomerInvestmentWebScreenState
   var user;
   Future loadUserLocally() async {
     SharedPreferences pref = await SharedPreferences.getInstance();
-    print("=====");
-    print(pref.containsKey("user"));
+
     if (pref.containsKey("user")) {
       var userData = pref.getString("user");
 
@@ -74,7 +73,6 @@ class _CustomerInvestmentWebScreenState
         investedAmount = alllist[1];
         balanceInGrams = alllist[2];
       });
-      print(transactions);
     });
   }
 

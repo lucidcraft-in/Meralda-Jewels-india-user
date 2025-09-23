@@ -87,7 +87,7 @@ class _WebLoginpageState extends State<WebLoginpage>
     final isWeb = screenWidth > 600;
     final isSmallScreen = screenWidth < 400;
     final isMediumScreen = screenWidth >= 400 && screenWidth < 600;
-    print(screenWidth);
+
     return Container(
       width: double.infinity,
       height: double.infinity,
@@ -440,8 +440,6 @@ class _WebLoginpageState extends State<WebLoginpage>
         _showErrorMessage("Invalid mobile number or password");
       }
     } catch (e, st) {
-      print("Login error: $e");
-      print(st);
       _showErrorMessage("An error occurred during login");
     }
   }

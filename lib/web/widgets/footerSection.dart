@@ -3,7 +3,10 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:meralda_gold_user/web/helperWidget.dart/documentsDialog.dart';
 import 'package:url_launcher/url_launcher.dart';
+
+import '../../common/colo_extension.dart';
 
 class CustomFooter extends StatelessWidget {
   const CustomFooter({super.key});
@@ -33,11 +36,14 @@ class CustomFooter extends StatelessWidget {
               ),
               Row(
                 children: [
-                  _socialIcon(FontAwesomeIcons.facebookF),
+                  _socialIcon(FontAwesomeIcons.facebookF,
+                      "https://www.facebook.com/meraldajewels/"),
                   const SizedBox(width: 12),
-                  _socialIcon(FontAwesomeIcons.twitter),
+                  _socialIcon(
+                      FontAwesomeIcons.twitter, "https://x.com/meraldajewels"),
                   const SizedBox(width: 12),
-                  _socialIcon(FontAwesomeIcons.instagram),
+                  _socialIcon(FontAwesomeIcons.instagram,
+                      "https://www.instagram.com/meralda.jewels/?hl=en"),
                 ],
               )
             ],
@@ -45,19 +51,37 @@ class CustomFooter extends StatelessWidget {
           const SizedBox(height: 30),
 
           // 🔹 Links Row (clickable)
+          // Wrap(
+          //   alignment: WrapAlignment.center,
+          //   spacing: 20,
+          //   children: [
+          //     _footerLink(
+          //         "Terms Of Use",
+          //         "https://docs.google.com/document/d/1RuN2P5O6hEA3I3TBxqjVaXnNGhTdBLpxCmxzEHBmK10/edit?usp=sharing",
+          //         context),
+          //     _footerLink(
+          //         "Privacy Policy",
+          //         "https://docs.google.com/document/d/1RuN2P5O6hEA3I3TBxqjVaXnNGhTdBLpxCmxzEHBmK10/edit?usp=sharing",
+          //         context),
+          //     _footerLink("Contact Us", "support@meraldajewels.com", context),
+          //     _footerLink("FAQ", "support@meraldajewels.com", context),
+          //     _footerLink(
+          //         "Feedback", "https://yourdomain.com/feedback", context),
+          //   ],
+          // ),
           Wrap(
             alignment: WrapAlignment.center,
             spacing: 20,
             children: [
+              _footerLink("Terms Of Use", context,
+                  () => showTermsAndConditionsDialog(context)),
+              _footerLink("Privacy Policy", context,
+                  () => showPrivacyPolicyDialog(context)),
               _footerLink(
-                "Terms Of Use",
-                "https://docs.google.com/document/d/1RuN2P5O6hEA3I3TBxqjVaXnNGhTdBLpxCmxzEHBmK10/edit?usp=sharing",
-              ),
-              _footerLink("Privacy Policy",
-                  "https://docs.google.com/document/d/1RuN2P5O6hEA3I3TBxqjVaXnNGhTdBLpxCmxzEHBmK10/edit?usp=sharing"),
-              _footerLink("Contact Us", "support@meraldajewels.com"),
-              _footerLink("FAQ", "support@meraldajewels.com"),
-              _footerLink("Feedback", "https://yourdomain.com/feedback"),
+                  "Contact Us", context, () => showContactUsDialog(context)),
+              // _footerLink("FAQ", context, () => showFAQDialog(context)),
+              // _footerLink(
+              //     "Feedback", context, () => showFeedbackDialog(context)),
             ],
           ),
           const SizedBox(height: 20),
@@ -74,34 +98,61 @@ class CustomFooter extends StatelessWidget {
     );
   }
 
-  static Widget _footerLink(String text, String url) {
-    return InkWell(
-      onTap: () async {
-        final Uri uri = Uri.parse(url);
-        try {
-          if (await canLaunchUrl(uri)) {
-            await launchUrl(uri, mode: LaunchMode.externalApplication);
-          }
-        } catch (e) {
-          print(e);
-        }
-      },
+  // static Widget _footerLink(String text, String url, BuildContext context) {
+  //   return InkWell(
+  //     onTap: () async {
+  //       // final Uri uri = Uri.parse(url);
+  //       // try {
+  //       //   if (await canLaunchUrl(uri)) {
+  //       //     await launchUrl(uri, mode: LaunchMode.externalApplication);
+  //       //   }
+  //       // } catch (e) {
+  //       //   print(e);
+  //       // }
+  //       if (text == "Terms Of Use") {
+  //         showTermsAndConditionsDialog(context);
+  //       }
+  //     },
+  //     child: Text(
+  //       text,
+  //       style: const TextStyle(
+  //         color: Colors.black54,
+  //         fontSize: 13,
+  //         decoration: TextDecoration.underline, // modern web style
+  //       ),
+  //     ),
+  //   );
+  // }
+
+  Widget _footerLink(String text, BuildContext context, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
       child: Text(
         text,
-        style: const TextStyle(
-          color: Colors.black54,
-          fontSize: 13,
-          decoration: TextDecoration.underline, // modern web style
+        style: TextStyle(
+          color: TColo.primaryColor1,
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+          decoration: TextDecoration.underline,
         ),
       ),
     );
   }
 
-  static Widget _socialIcon(IconData icon) {
-    return CircleAvatar(
-      radius: 18,
-      backgroundColor: Colors.grey.shade300,
-      child: Icon(icon, size: 16, color: Colors.black54),
+  static Widget _socialIcon(IconData icon, String url) {
+    return InkWell(
+      onTap: () async {
+        final uri = Uri.parse(url);
+        if (await canLaunchUrl(uri)) {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        }
+      },
+      borderRadius: BorderRadius.circular(18),
+      child: CircleAvatar(
+        radius: 18,
+        backgroundColor: Colors.grey.shade300,
+        child: Icon(icon, size: 16, color: Colors.black54),
+      ),
     );
   }
 }

@@ -379,6 +379,9 @@ class OTPProvider with ChangeNotifier {
               "otp": otp,
               "otpSentAt": now,
               "createdAt": now,
+              "name": "",
+              "branch": "",
+              "branchName": ""
             });
           } else {
             await userRef.doc(existingUser.docs.first.id).update({
@@ -441,10 +444,7 @@ class OTPProvider with ChangeNotifier {
 
       // Success
       final appUser = AppUser(
-        id: doc.id,
-        phoneNo: mobile,
-        createdAt: createdAt ?? now,
-      );
+          id: doc.id, phoneNo: mobile, createdAt: createdAt ?? now, name: "");
 
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(

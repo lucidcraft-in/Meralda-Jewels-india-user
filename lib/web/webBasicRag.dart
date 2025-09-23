@@ -375,7 +375,7 @@ class _SetPasswordScreenState extends State<SetPasswordScreen> {
           password: _passwordController.text,
           createdDate: DateTime.now(),
           updatedDate: DateTime.now(),
-          status: CustomerStatus.start);
+          status: CustomerStatus.pending);
       final docRef =
           await FirebaseFirestore.instance.collection("user").add(user.toMap());
 
@@ -401,8 +401,6 @@ class _SetPasswordScreenState extends State<SetPasswordScreen> {
         }),
       );
 
-      print("-------==========-------");
-      print({"id": docRef.id, ...sanitizedUserData});
       // Simulate API call
       await Future.delayed(const Duration(seconds: 2));
 
@@ -451,7 +449,7 @@ class _SetPasswordScreenState extends State<SetPasswordScreen> {
                 ),
                 const SizedBox(height: 20),
                 Text(
-                  "Account Created Successfully!",
+                  "Account login Successfully!",
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,

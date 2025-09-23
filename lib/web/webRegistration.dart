@@ -19,8 +19,10 @@ import 'webPayScreen.dart';
 
 class UserRegistrationDialog extends StatefulWidget {
   final String? type;
-  const UserRegistrationDialog({
+  var user;
+  UserRegistrationDialog({
     Key? key,
+    required this.user,
     required this.type,
   }) : super(key: key);
   @override
@@ -64,7 +66,10 @@ class _UserRegistrationDialogState extends State<UserRegistrationDialog> {
   String? selectedBranch;
   String? selectedCountry;
   final List<String> branchList = ["Branch A", "Branch B", "Branch C"];
-  final List<String> countryList = ["India", "UAE", "USA"];
+  final List<String> countryList = [
+    "India",
+    "UAE",
+  ];
 
   // Date fields
   DateTime? selectedDate;
@@ -84,7 +89,7 @@ class _UserRegistrationDialogState extends State<UserRegistrationDialog> {
       final accounts = accountProvider.accounts;
       if (accounts.isNotEmpty) {
         activeAccount = accounts[accountProvider.selectedAccountIndex];
-        print(activeAccount);
+
         // Pre-fill only if not null
         _phoneController.text = activeAccount.phoneNo ?? "";
         _nameController.text = activeAccount.name ?? "";
@@ -109,10 +114,10 @@ class _UserRegistrationDialogState extends State<UserRegistrationDialog> {
             _loadBranches(selectedCountry!);
           });
         }
+      } else {
+        _phoneController.text = widget.user["phoneNo"] ?? "";
       }
     });
-    print("---------");
-    print(_nameController.text);
   }
 
   @override
@@ -138,12 +143,10 @@ class _UserRegistrationDialogState extends State<UserRegistrationDialog> {
                       const SizedBox(height: 20),
 
                       // Main form fields in two columns for web
-                      isWeb
-                          ? _buildWebForm(activeAccount!)
-                          : _buildMobileForm(),
+                      isWeb ? _buildWebForm() : _buildMobileForm(),
 
                       const SizedBox(height: 30),
-                      _buildRegisterButton(activeAccount!),
+                      _buildRegisterButton(),
                     ],
                   ),
                 ),
@@ -162,14 +165,152 @@ class _UserRegistrationDialogState extends State<UserRegistrationDialog> {
     );
   }
 
-  Widget _buildWebForm(SchemeUserModel activeAccount) {
+  // Widget _buildWebForm() {
+  //   print("=====================");
+  //   print(activeAccount);
+  //   return Row(
+  //     crossAxisAlignment: CrossAxisAlignment.start,
+  //     children: [
+  //       Expanded(
+  //         child: Column(
+  //           children: [
+  //             // Scheme Type
+  //             _buildDropdown(
+  //               label: "Scheme Type",
+  //               value: selectedSchemeType,
+  //               items: schemeTypeList,
+  //               onChanged: (val) => setState(() {
+  //                 selectedSchemeType = val;
+  //                 _generateCustomerId(val == "Wishlist" ? "WL" : "ASP");
+  //               }),
+  //             ),
+  //             const SizedBox(height: 16),
+  //             Row(
+  //               children: [
+  //                 Expanded(
+  //                   child: _buildCountryDropdown(),
+  //                 ),
+  //                 // Expanded(
+  //                 //   child: _buildDropdown(
+  //                 //     label: "Country",
+  //                 //     value: selectedCountry,
+  //                 //     items: countryList,
+  //                 //     onChanged: (val) => setState(() => selectedCountry = val),
+  //                 //   ),
+  //                 // ),
+  //                 const SizedBox(width: 16),
+  //                 Expanded(child: _buildBranchDropdown())
+  //               ],
+  //             ),
+  //             if (activeAccount == null) const SizedBox(height: 16),
+
+  //             // // Customer Name
+  //             if (activeAccount == null)
+  //               _buildTextField(
+  //                   "Customer Name", Icons.person_outline, _nameController,
+  //                   isRequired: true),
+  //             if (activeAccount == null) const SizedBox(height: 16),
+
+  //             // // Customer ID
+  //             if (activeAccount == null)
+  //               _buildTextField(
+  //                   "Customer ID", Icons.badge_outlined, _custIdController,
+  //                   isReadOnly: true),
+  //             const SizedBox(height: 16),
+
+  //             // // Phone Number
+  //             if (activeAccount == null)
+  //               _buildTextField(
+  //                 "Phone Number",
+  //                 Icons.phone_outlined,
+  //                 _phoneController,
+  //                 isRequired: true,
+  //                 keyboardType: TextInputType.phone,
+  //                 validator: (value) {
+  //                   if (value == null || value.isEmpty) return 'Required';
+  //                   if (value.length != 10) return 'Invalid phone number';
+  //                   return null;
+  //                 },
+  //               ),
+  //             const SizedBox(height: 16),
+  //             _buildTextField(
+  //                 "Scheme Amount", Icons.attach_money, openingAmtCntrl),
+  //             if (activeAccount == null) const SizedBox(height: 16),
+  //             // Address
+  //             if (activeAccount == null)
+  //               _buildTextField(
+  //                 "Address",
+  //                 Icons.home_outlined,
+  //                 _addressController,
+  //                 isRequired: true,
+  //                 maxLines: 3,
+  //               ),
+
+  //             // // Country and Branch selection
+
+  //             if (activeAccount == null) const SizedBox(height: 20),
+  //             if (activeAccount == null) _buildKYCSection(),
+  //             const SizedBox(height: 20),
+  //             // // Additional fields checkbox
+  //             // // if (_nameController.text == "")
+  //             if (activeAccount == null)
+  //               Row(
+  //                 children: [
+  //                   Checkbox(
+  //                     value: _showAdditionalFields,
+  //                     onChanged: (value) => setState(
+  //                         () => _showAdditionalFields = value ?? false),
+  //                   ),
+  //                   Text('Show Additional Fields'),
+  //                 ],
+  //               ),
+  //             if (activeAccount == null) const SizedBox(height: 10),
+
+  //             // Additional fields (conditionally shown)
+
+  //             if (_showAdditionalFields) ...[
+  //               if (activeAccount == null)
+  //                 _buildTextField(
+  //                     "Email", Icons.email_outlined, _emailController),
+  //               if (activeAccount == null) const SizedBox(height: 16),
+  //               if (activeAccount == null)
+  //                 _buildTextField(
+  //                     "Place", Icons.location_on_outlined, _placeController),
+  //               if (activeAccount == null) const SizedBox(height: 16),
+  //               if (activeAccount == null) _buildDateField("Date of Birth"),
+  //               if (activeAccount == null) const SizedBox(height: 16),
+  //               if (activeAccount == null)
+  //                 _buildTextField(
+  //                     "Nominee", Icons.person_outline, _nomineeController),
+  //               if (activeAccount == null) const SizedBox(height: 16),
+  //               if (activeAccount == null)
+  //                 _buildTextField("Nominee Phone", Icons.phone_outlined,
+  //                     _nomineePhoneController,
+  //                     keyboardType: TextInputType.phone),
+  //               if (activeAccount == null) const SizedBox(height: 16),
+  //               if (activeAccount == null)
+  //                 _buildTextField("Nominee Relation", Icons.group_outlined,
+  //                     _nomineeRelationController),
+  //               if (activeAccount == null) const SizedBox(height: 16),
+  //             ],
+  //           ],
+  //         ),
+  //       ),
+  //     ],
+  //   );
+  // }
+
+  Widget _buildWebForm() {
+    // Determine if we're in "new account" mode (activeAccount is null)
+    final bool isNewAccount = activeAccount == null;
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Expanded(
           child: Column(
             children: [
-              // Scheme Type
+              // Scheme Type (always shown)
               _buildDropdown(
                 label: "Scheme Type",
                 value: selectedSchemeType,
@@ -180,67 +321,85 @@ class _UserRegistrationDialogState extends State<UserRegistrationDialog> {
                 }),
               ),
               const SizedBox(height: 16),
+
+              // Country and Branch (always shown)
               Row(
                 children: [
                   Expanded(
                     child: _buildCountryDropdown(),
                   ),
-                  // Expanded(
-                  //   child: _buildDropdown(
-                  //     label: "Country",
-                  //     value: selectedCountry,
-                  //     items: countryList,
-                  //     onChanged: (val) => setState(() => selectedCountry = val),
-                  //   ),
-                  // ),
                   const SizedBox(width: 16),
                   Expanded(child: _buildBranchDropdown())
-                  // Expanded(
-                  //   child: _buildDropdown(
-                  //     label: "Branch",
-                  //     value: selectedBranch,
-                  //     items: branchList,
-                  //     onChanged: (val) => setState(() => selectedBranch = val),
-                  //   ),
-                  // ),
                 ],
               ),
-              if (activeAccount.name == "") const SizedBox(height: 16),
+              const SizedBox(height: 16),
 
-              // Customer Name
-              if (activeAccount.name == "")
+              // Customer Name (only for new accounts)
+              if (isNewAccount) ...[
                 _buildTextField(
                     "Customer Name", Icons.person_outline, _nameController,
                     isRequired: true),
-              if (activeAccount.custId == "") const SizedBox(height: 16),
+                const SizedBox(height: 16),
+              ],
 
-              // Customer ID
-              if (activeAccount.custId == "")
+              // Customer ID (only for new accounts)
+              if (isNewAccount) ...[
                 _buildTextField(
                     "Customer ID", Icons.badge_outlined, _custIdController,
                     isReadOnly: true),
-              const SizedBox(height: 16),
+                const SizedBox(height: 16),
+              ],
 
-              // Phone Number
-              // if (_nameController.text == "")
+              // Phone Number (only for new accounts)
+              if (isNewAccount) ...[
+                _buildTextField(
+                  "Phone Number",
+                  Icons.phone_outlined,
+                  _phoneController,
+                  isRequired: true,
+                  keyboardType: TextInputType.phone,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) return 'Required';
+                    if (value.length != 10) return 'Invalid phone number';
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+              ],
+
+              // Scheme Amount (always shown)
               _buildTextField(
-                "Phone Number",
-                Icons.phone_outlined,
-                _phoneController,
-                isRequired: true,
-                keyboardType: TextInputType.phone,
-                validator: (value) {
-                  if (value == null || value.isEmpty) return 'Required';
-                  if (value.length != 10) return 'Invalid phone number';
-                  return null;
-                },
+                  "Scheme Amount", Icons.attach_money, openingAmtCntrl,
+                  isRequired: true),
+              const SizedBox(height: 8),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.shade50,
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: Colors.orange.shade200),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.info_outline,
+                          size: 14, color: Colors.orange.shade600),
+                      SizedBox(width: 4),
+                      Text(
+                        "Minimum ₹2000",
+                        style: TextStyle(
+                            color: Colors.orange.shade700, fontSize: 12),
+                      ),
+                    ],
+                  ),
+                ),
               ),
               const SizedBox(height: 16),
-              _buildTextField(
-                  "Scheme Amount", Icons.attach_money, openingAmtCntrl),
-              if (activeAccount.address == "") const SizedBox(height: 16),
-              // Address
-              if (activeAccount.address == "")
+
+              // Address (only for new accounts)
+              if (isNewAccount) ...[
                 _buildTextField(
                   "Address",
                   Icons.home_outlined,
@@ -248,15 +407,27 @@ class _UserRegistrationDialogState extends State<UserRegistrationDialog> {
                   isRequired: true,
                   maxLines: 3,
                 ),
+                const SizedBox(height: 16),
+              ],
+              if (isNewAccount) ...[
+                _buildTextField(
+                  "Pin Code",
+                  Icons.pin_drop,
+                  _pinCodeController,
+                  isRequired: true,
+                  maxLines: 1,
+                ),
+                const SizedBox(height: 16),
+              ],
 
-              // Country and Branch selection
+              // KYC Section (only for new accounts)
+              if (isNewAccount) ...[
+                _buildKYCSection(),
+                const SizedBox(height: 20),
+              ],
 
-              if (activeAccount.name == "") const SizedBox(height: 20),
-              if (activeAccount.name == "") _buildKYCSection(activeAccount),
-              const SizedBox(height: 20),
-              // Additional fields checkbox
-              // if (_nameController.text == "")
-              if (activeAccount.name == "")
+              // Additional fields checkbox (only for new accounts)
+              if (isNewAccount) ...[
                 Row(
                   children: [
                     Checkbox(
@@ -267,41 +438,29 @@ class _UserRegistrationDialogState extends State<UserRegistrationDialog> {
                     Text('Show Additional Fields'),
                   ],
                 ),
-              if (activeAccount.name == "") const SizedBox(height: 10),
+                const SizedBox(height: 10),
+              ],
 
-              // Additional fields (conditionally shown)
-
-              if (_showAdditionalFields) ...[
-                if (activeAccount.name == "")
-                  _buildTextField(
-                      "Email", Icons.email_outlined, _emailController),
-                if (activeAccount.name == "") const SizedBox(height: 16),
-                if (activeAccount.name == "")
-                  _buildTextField(
-                      "Place", Icons.location_on_outlined, _placeController),
-                if (activeAccount.name == "") const SizedBox(height: 16),
-                if (activeAccount.name == "") _buildDateField("Date of Birth"),
-                if (activeAccount.name == "") const SizedBox(height: 16),
-                if (activeAccount.name == "")
-                  _buildTextField(
-                      "Nominee", Icons.person_outline, _nomineeController),
-                if (activeAccount.name == "") const SizedBox(height: 16),
-                if (activeAccount.name == "")
-                  _buildTextField("Nominee Phone", Icons.phone_outlined,
-                      _nomineePhoneController,
-                      keyboardType: TextInputType.phone),
-                if (activeAccount.name == "") const SizedBox(height: 16),
-                if (activeAccount.name == "")
-                  _buildTextField("Nominee Relation", Icons.group_outlined,
-                      _nomineeRelationController),
-                if (activeAccount.name == "") const SizedBox(height: 16),
-                // _buildTextField("Aadhar Card", _aadharController),
-                // const SizedBox(height: 16),
-                // _buildTextField("PAN Card", _panController),
-                // const SizedBox(height: 16),
-                // _buildTextField("PIN Code", _pinCodeController,
-                //     keyboardType: TextInputType.number),
-                // const SizedBox(height: 16),
+              // Additional fields (conditionally shown, only for new accounts)
+              if (isNewAccount && _showAdditionalFields) ...[
+                _buildTextField(
+                    "Email", Icons.email_outlined, _emailController),
+                const SizedBox(height: 16),
+                _buildTextField(
+                    "Place", Icons.location_on_outlined, _placeController),
+                const SizedBox(height: 16),
+                _buildDateField("Date of Birth"),
+                const SizedBox(height: 16),
+                _buildTextField(
+                    "Nominee", Icons.person_outlined, _nomineeController),
+                const SizedBox(height: 16),
+                _buildTextField("Nominee Phone", Icons.phone_outlined,
+                    _nomineePhoneController,
+                    keyboardType: TextInputType.phone),
+                const SizedBox(height: 16),
+                _buildTextField("Nominee Relation", Icons.group_outlined,
+                    _nomineeRelationController),
+                const SizedBox(height: 16),
               ],
             ],
           ),
@@ -310,7 +469,10 @@ class _UserRegistrationDialogState extends State<UserRegistrationDialog> {
     );
   }
 
-  Widget _buildKYCSection(SchemeUserModel user) {
+  Widget _buildKYCSection() {
+    print(_aadharController.text);
+    print(_aadharFrontImage);
+    print(_aadharBackImage);
     return Card(
       elevation: 4,
       child: Padding(
@@ -318,77 +480,94 @@ class _UserRegistrationDialogState extends State<UserRegistrationDialog> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (user.name == "")
-              Text('KYC Documents (Mandatory)',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            if (user.adharCard == "") const SizedBox(height: 16),
+            Text('KYC Documents (Mandatory)',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 16),
 
             // Aadhar Number
-            if (user.adharCard == "")
-              _buildTextField(
-                "Aadhar Number*",
-                Icons.numbers,
-                _aadharController,
-                isRequired: true,
-                keyboardType: TextInputType.number,
-                validator: (value) {
-                  if (value == null || value.isEmpty) return 'Required';
-                  if (value.length != 12) return 'Aadhar must be 12 digits';
-                  if (!RegExp(r'^[0-9]+$').hasMatch(value))
-                    return 'Only numbers allowed';
-                  return null;
-                },
-              ),
-            if (user.aadharFrontUrl == "") const SizedBox(height: 16),
+
+            _buildTextField(
+              "Aadhar Number*",
+              Icons.numbers,
+              _aadharController,
+              isRequired: true,
+              keyboardType: TextInputType.number,
+              validator: (value) {
+                if (value == null || value.isEmpty) return 'Required';
+                if (value.length != 12) return 'Aadhar must be 12 digits';
+                if (!RegExp(r'^[0-9]+$').hasMatch(value))
+                  return 'Only numbers allowed';
+                return null;
+              },
+            ),
+            const SizedBox(height: 16),
 
             // Aadhar Card Front
-            if (user.aadharFrontUrl == "")
-              _buildImageUploadField(
-                label: "Aadhar Front*",
-                imageFile: _aadharFrontImage,
-                imageBytes: _aadharFrontImageBytes,
-                onPressed: () => _pickImage(true, true),
-                isRequired: true,
-              ),
-            if (user.aadharBackUrl == "") const SizedBox(height: 16),
+
+            _buildImageUploadField(
+              label: "Aadhar Front*",
+              imageFile: _aadharFrontImage,
+              imageBytes: _aadharFrontImageBytes,
+              onPressed: () => _pickImage(true, true),
+              onRemove: () {
+                setState(() {
+                  _aadharFrontImage = null;
+                  _aadharFrontImageBytes = null;
+                });
+              },
+              isRequired: true,
+            ),
+            const SizedBox(height: 16),
 
             // Aadhar Card Back
-            if (user.aadharBackUrl == "")
-              _buildImageUploadField(
-                label: "Aadhar Back*",
-                imageFile: _aadharBackImage,
-                imageBytes: _aadharBackImageBytes,
-                onPressed: () => _pickImage(true, false),
-                isRequired: true,
-              ),
-            if (user.panCard == "") const SizedBox(height: 16),
+
+            _buildImageUploadField(
+              label: "Aadhar Back*",
+              imageFile: _aadharBackImage,
+              imageBytes: _aadharBackImageBytes,
+              onPressed: () => _pickImage(true, false),
+              onRemove: () {
+                setState(() {
+                  _aadharBackImage = null;
+                  _aadharBackImageBytes = null;
+                });
+              },
+              isRequired: true,
+            ),
+            const SizedBox(height: 16),
 
             // PAN Number
-            if (user.panCard == "")
-              _buildTextField(
-                "PAN Number*",
-                Icons.numbers,
-                _panController,
-                isRequired: true,
-                validator: (value) {
-                  if (value == null || value.isEmpty) return 'Required';
-                  if (value.length != 10) return 'PAN must be 10 characters';
-                  if (!RegExp(r'^[A-Z]{5}[0-9]{4}[A-Z]{1}$').hasMatch(value))
-                    return 'Invalid PAN format (e.g., ABCDE1234F)';
-                  return null;
-                },
-              ),
-            if (user.panCardUrl == "") const SizedBox(height: 16),
+
+            _buildTextField(
+              "PAN Number*",
+              Icons.numbers,
+              _panController,
+              isRequired: true,
+              validator: (value) {
+                if (value == null || value.isEmpty) return 'Required';
+                if (value.length != 10) return 'PAN must be 10 characters';
+                if (!RegExp(r'^[A-Z]{5}[0-9]{4}[A-Z]{1}$').hasMatch(value))
+                  return 'Invalid PAN format (e.g., ABCDE1234F)';
+                return null;
+              },
+            ),
+            const SizedBox(height: 16),
 
             // PAN Card Image
-            if (user.panCardUrl == "")
-              _buildImageUploadField(
-                label: "PAN Card*",
-                imageFile: _panCardImage,
-                imageBytes: _panCardImageBytes,
-                onPressed: () => _pickImage(false, null),
-                isRequired: true,
-              ),
+
+            _buildImageUploadField(
+              label: "PAN Card*",
+              imageFile: _panCardImage,
+              imageBytes: _panCardImageBytes,
+              onPressed: () => _pickImage(false, null),
+              onRemove: () {
+                setState(() {
+                  _panCardImage = null;
+                  _panCardImageBytes = null;
+                });
+              },
+              isRequired: true,
+            ),
           ],
         ),
       ),
@@ -419,46 +598,116 @@ class _UserRegistrationDialogState extends State<UserRegistrationDialog> {
     File? imageFile,
     Uint8List? imageBytes,
     required VoidCallback onPressed,
+    required VoidCallback onRemove,
     bool isRequired = false,
   }) {
+    final bool hasImage = imageFile != null || imageBytes != null;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: TextStyle(fontWeight: FontWeight.bold)),
-        const SizedBox(height: 8),
-        InkWell(
-          onTap: onPressed,
-          child: Container(
-            height: 150,
-            decoration: BoxDecoration(
-              border: Border.all(
-                color: (imageFile == null && imageBytes == null && isRequired)
-                    ? Colors.red
-                    : Colors.grey,
-                width: 2,
-              ),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: (imageBytes != null)
-                ? Image.memory(imageBytes, fit: BoxFit.cover)
-                : (imageFile != null)
-                    ? Image.file(imageFile, fit: BoxFit.cover)
-                    : Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.camera_alt, size: 40),
-                            Text('Tap to upload $label'),
-                          ],
-                        ),
-                      ),
+        Text(
+          label,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
           ),
         ),
-        if (imageFile == null && imageBytes == null && isRequired)
+        const SizedBox(height: 8),
+        InkWell(
+          onTap: !hasImage ? onPressed : null,
+          child: Container(
+            height: 180,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              gradient: hasImage
+                  ? null
+                  : LinearGradient(
+                      colors: [Colors.blue.shade50, Colors.blue.shade100],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+              border: Border.all(
+                color: (hasImage)
+                    ? Colors.transparent
+                    : (isRequired ? Colors.red : Colors.grey.shade400),
+                width: 2,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Stack(
+              children: [
+                // Image display
+                if (imageBytes != null)
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: Image.memory(imageBytes,
+                        fit: BoxFit.contain, width: double.infinity),
+                  )
+                else if (imageFile != null)
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: Image.file(imageFile,
+                        fit: BoxFit.cover, width: double.infinity),
+                  )
+                else
+                  // Placeholder with trending style
+                  Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.cloud_upload,
+                            size: 50, color: Colors.blue.shade400),
+                        const SizedBox(height: 8),
+                        Text(
+                          "Tap to upload $label",
+                          style: TextStyle(
+                            color: Colors.blue.shade700,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                // Close Icon
+                if (hasImage)
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: InkWell(
+                      onTap: onRemove,
+                      child: Container(
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.black54,
+                        ),
+                        padding: const EdgeInsets.all(6),
+                        child: const Icon(
+                          Icons.close,
+                          size: 20,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+        if (!hasImage && isRequired)
           Padding(
-            padding: const EdgeInsets.only(top: 4.0),
-            child: Text('This field is required',
-                style: TextStyle(color: Colors.red, fontSize: 12)),
+            padding: const EdgeInsets.only(top: 6.0),
+            child: Text(
+              'This field is required',
+              style: const TextStyle(color: Colors.red, fontSize: 12),
+            ),
           ),
       ],
     );
@@ -747,7 +996,7 @@ class _UserRegistrationDialogState extends State<UserRegistrationDialog> {
     }
   }
 
-  _buildRegisterButton(SchemeUserModel activeAc) {
+  _buildRegisterButton() {
     return SizedBox(
       width: double.infinity,
       height: 55,
@@ -755,7 +1004,7 @@ class _UserRegistrationDialogState extends State<UserRegistrationDialog> {
         onPressed: () {
           if (_isLoading) {
           } else {
-            _submitForm(activeAc);
+            _submitForm();
           }
         },
         style: ElevatedButton.styleFrom(
@@ -782,10 +1031,11 @@ class _UserRegistrationDialogState extends State<UserRegistrationDialog> {
 
   bool isClick = false;
   bool _isLoading = false;
-  Future<void> _submitForm(SchemeUserModel user) async {
-    if (isClick) return;
 
-    // Validate form
+  Future<void> _submitForm() async {
+    if (_isLoading) return;
+
+    // Validate form based on whether it's a new account or existing account update
     if (!_formKey.currentState!.validate()) {
       showErrorDialog(
         'Required',
@@ -795,7 +1045,7 @@ class _UserRegistrationDialogState extends State<UserRegistrationDialog> {
       return;
     }
 
-    // Validate dropdown selections
+    // Validate dropdown selections (always required)
     if (selectedSchemeType == null) {
       showErrorDialog(
         'Select Scheme',
@@ -805,7 +1055,7 @@ class _UserRegistrationDialogState extends State<UserRegistrationDialog> {
       return;
     }
 
-    // Validate country and branch selection
+    // Validate country and branch selection (always required)
     if (selectedCountry == null || selectedBranch == null) {
       showErrorDialog(
         'Select Branch',
@@ -815,18 +1065,7 @@ class _UserRegistrationDialogState extends State<UserRegistrationDialog> {
       return;
     }
 
-    if (_nameController.text == "") {
-      if (_aadharFrontImageBytes == null ||
-          _aadharBackImageBytes == null ||
-          _panCardImageBytes == null) {
-        showErrorDialog(
-          'Document required',
-          'Please upload all required documents!',
-          context,
-        );
-        return;
-      }
-    }
+    // Validate scheme amount (always required)
     if (openingAmtCntrl.text.isEmpty) {
       showErrorDialog(
         'Opening Amount Required',
@@ -843,82 +1082,95 @@ class _UserRegistrationDialogState extends State<UserRegistrationDialog> {
       return;
     }
 
+    // For new accounts, validate KYC documents
+    final bool isNewAccount = activeAccount == null;
+    if (isNewAccount) {
+      if (_aadharFrontImageBytes == null ||
+          _aadharBackImageBytes == null ||
+          _panCardImageBytes == null) {
+        showErrorDialog(
+          'Document required',
+          'Please upload all required documents!',
+          context,
+        );
+        return;
+      }
+    }
+
     // Save form data
     _formKey.currentState!.save();
 
     setState(() {
-      isClick = true;
       _isLoading = true;
     });
 
-    // Upload images first
-    if (user.aadharFrontUrl == "") {
-      aadharFrontUrl = await _uploadImage(
-        file: _aadharFrontImage,
-        bytes: _aadharFrontImageBytes,
-        path: '${_custIdController.text}_aadhar_front.jpg',
-      );
-    }
-    if (user.aadharBackUrl == "") {
-      aadharBackUrl = await _uploadImage(
-        file: _aadharBackImage,
-        bytes: _aadharBackImageBytes,
-        path: '${_custIdController.text}_aadhar_back.jpg',
-      );
-    }
-    if (user.panCard == "") {
-      panCardUrl = await _uploadImage(
-        file: _panCardImage,
-        bytes: _panCardImageBytes,
-        path: '${_custIdController.text}_pan_card.jpg',
-      );
-    }
-    if (user.name == "") {
-      if (aadharFrontUrl == null ||
-          aadharBackUrl == null ||
-          panCardUrl == null) {
-        throw 'Failed to upload one or more images';
-      }
-    }
+    try {
+      // Upload images for new accounts only
+      if (isNewAccount) {
+        aadharFrontUrl = await _uploadImage(
+          file: _aadharFrontImage,
+          bytes: _aadharFrontImageBytes,
+          path: '${_custIdController.text}_aadhar_front.jpg',
+        );
 
-    if (widget.type != "add") {
-      print("------- update --------");
-      try {
+        aadharBackUrl = await _uploadImage(
+          file: _aadharBackImage,
+          bytes: _aadharBackImageBytes,
+          path: '${_custIdController.text}_aadhar_back.jpg',
+        );
+
+        panCardUrl = await _uploadImage(
+          file: _panCardImage,
+          bytes: _panCardImageBytes,
+          path: '${_custIdController.text}_pan_card.jpg',
+        );
+
+        // Check if image uploads were successful
+        if (aadharFrontUrl == null ||
+            aadharBackUrl == null ||
+            panCardUrl == null) {
+          throw 'Failed to upload one or more images';
+        }
+      }
+
+      if (widget.type != "add") {
+        // UPDATE EXISTING ACCOUNT
+        print("------- update --------");
+
         final activeAccount = context.read<AccountProvider>().currentAccount;
 
         if (activeAccount != null && activeAccount.id != null) {
-          // ✅ Update existing Firestore doc
-          await FirebaseFirestore.instance
-              .collection('user')
-              .doc(activeAccount.id)
-              .update({
-            "name": _nameController.text,
-            "custId": _custIdController.text,
-            "address": _addressController.text,
-            "place": _placeController.text,
-            "mailId": _emailController.text,
+          // Prepare update data
+          final updateData = {
             "schemeType": selectedSchemeType!,
             "openingAmount": double.parse(openingAmtCntrl.text),
             "branch": selectedBranchObject?.id ?? '',
             "branchName": selectedBranch ?? '',
-            "dateofBirth": selectedDate ?? DateTime.now(),
-            "nominee": _nomineeController.text,
-            "nomineePhone": _nomineePhoneController.text,
-            "nomineeRelation": _nomineeRelationController.text,
-            "adharCard": _aadharController.text,
-            "panCard": _panController.text,
-            "pinCode": _pinCodeController.text,
             "country": selectedCountry ?? '',
-            "aadharFrontUrl": aadharFrontUrl,
-            "aadharBackUrl": aadharBackUrl,
-            "panCardUrl": panCardUrl,
             "updatedDate": DateTime.now(),
-            "status": CustomerStatus.created
-          });
+          };
+
+          // Only include KYC fields if they were updated
+          if (_aadharController.text.isNotEmpty) {
+            updateData["adharCard"] = _aadharController.text;
+          }
+          if (_panController.text.isNotEmpty) {
+            updateData["panCard"] = _panController.text;
+          }
+          if (_pinCodeController.text.isNotEmpty) {
+            updateData["pinCode"] = _pinCodeController.text;
+          }
+
+          // Update existing Firestore doc
+          await FirebaseFirestore.instance
+              .collection('schemeusers')
+              .doc(activeAccount.id)
+              .update(updateData);
 
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Account updated successfully!')),
           );
+
           Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(
               builder: (context) => WebPayAmountScreen(
@@ -935,25 +1187,10 @@ class _UserRegistrationDialogState extends State<UserRegistrationDialog> {
             SnackBar(content: Text('No active account found to update!')),
           );
         }
-      } catch (err) {
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (ctx) => AlertDialog(
-            title: Text('Error'),
-            content: Text('Failed to update account: $err'),
-            actions: [
-              TextButton(
-                child: Text('OK'),
-                onPressed: () => Navigator.of(ctx).pop(),
-              )
-            ],
-          ),
-        );
-      }
-    } else {
-      print("------- add --------");
-      try {
+      } else {
+        // CREATE NEW ACCOUNT
+        print("------- add --------");
+
         final user = SchemeUserModel(
             createdDate: DateTime.now(),
             name: _nameController.text,
@@ -985,25 +1222,40 @@ class _UserRegistrationDialogState extends State<UserRegistrationDialog> {
             aadharBackUrl: aadharBackUrl,
             panCardUrl: panCardUrl,
             updatedDate: DateTime.now(),
-            status: CustomerStatus.created);
+            status: CustomerStatus.pending);
+
         print(user.toMap().toString());
-        // bool? isCreated = await Provider.of<User>(context, listen: false)
-        //     .create(user, _custIdController.text, selectedSchemeType!, '', '',
-        //         selectedOdType!);
-        // ✅ Add document (auto-generated ID by Firestore)
+
+        // Add document (auto-generated ID by Firestore)
         final docRef =
-            await FirebaseFirestore.instance.collection('schemeUsers').add({
+            await FirebaseFirestore.instance.collection('schemeusers').add({
           ...user.toMap(),
           "createdDate": FieldValue.serverTimestamp(),
           "updatedDate": FieldValue.serverTimestamp(),
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Customer created successfully!'),
-            backgroundColor: Colors.green,
-          ),
-        );
+        print(_phoneController.text);
+        final querySnapshot = await FirebaseFirestore.instance
+            .collection('user')
+            .where('phoneNo', isEqualTo: _phoneController.text)
+            .limit(1) // assuming phoneNo is unique
+            .get();
+        print("==============");
+        print(querySnapshot.docs.length);
+        if (querySnapshot.docs.isNotEmpty) {
+          final docId = querySnapshot.docs.first.id;
+
+          await FirebaseFirestore.instance
+              .collection('user')
+              .doc(docId)
+              .update({
+            'name': _nameController.text,
+            "branch": selectedBranchObject?.id,
+            "branchName": selectedBranch
+          });
+
+          print("✅ User name updated successfully");
+        }
 
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(
@@ -1016,37 +1268,59 @@ class _UserRegistrationDialogState extends State<UserRegistrationDialog> {
           (Route<dynamic> route) => false,
         );
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('You can login after verification is complete'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      } catch (err) {
-        print(err);
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (ctx) => AlertDialog(
-            title: Text('Error'),
-            content: Text('Failed to create customer: $err'),
-            actions: [
-              TextButton(
-                child: Text('OK'),
-                onPressed: () => Navigator.of(ctx).pop(),
-              )
-            ],
-          ),
-        );
-      } finally {
-        if (mounted) {
-          setState(() {
-            isClick = false;
-            _isLoading = false;
-          });
-        }
+        final screenWidth = MediaQuery.of(context).size.width;
+        _showRightSnackBar(
+            context, "Scheme Registration Succefully..", Colors.green);
+      }
+      context.read<AccountProvider>().loadAccounts(_phoneController.text);
+    } catch (err) {
+      print('Error: $err');
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => AlertDialog(
+          title: Text('Error'),
+          content: Text(
+              'Failed to ${widget.type != "add" ? "update" : "create"} customer: $err'),
+          actions: [
+            TextButton(
+              child: Text('OK'),
+              onPressed: () => Navigator.of(ctx).pop(),
+            )
+          ],
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
       }
     }
+  }
+
+  void _showRightSnackBar(
+      BuildContext context, String message, Color backgroundColor) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final snackbarWidth = 400.0; // Fixed width for the snackbar
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Container(
+          width: snackbarWidth,
+          child: Padding(
+            padding: const EdgeInsets.only(left: 20),
+            child: Text(message),
+          ),
+        ),
+        backgroundColor: backgroundColor,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        margin: EdgeInsets.only(
+            left: MediaQuery.of(context).size.width * 0.7,
+            bottom: 16,
+            right: 16),
+      ),
+    );
   }
 
   Widget _buildCountryDropdown() {
