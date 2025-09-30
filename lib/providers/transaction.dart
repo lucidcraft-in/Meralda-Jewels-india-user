@@ -1,13 +1,17 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 
+import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class TransactionModel {
   final String id;
   final String customerName;
   final String customerId;
+  final String custId; // ✅ newly added
   final DateTime date;
   final double amount;
-  final int transactionType;
+  final int transactionType; // 0: receipt, 1: purchase
   final String note;
   final String invoiceNo;
   final String category;
@@ -16,15 +20,20 @@ class TransactionModel {
   final double gramPriceInvestDay;
   final double gramWeight;
   final String branch;
-  final String staffName;
   final String branchName;
+  final String staffName;
   final String merchentTransactionId;
   final String transactionMode;
+
+  // ✅ newly added fields
+  final DateTime maturityDate;
+  final String schemeName;
 
   TransactionModel({
     required this.id,
     required this.customerName,
     required this.customerId,
+    required this.custId, // ✅ required
     required this.date,
     required this.amount,
     required this.transactionType,
@@ -40,13 +49,73 @@ class TransactionModel {
     required this.staffName,
     required this.merchentTransactionId,
     required this.transactionMode,
+    required this.maturityDate,
+    required this.schemeName,
   });
+
+  factory TransactionModel.fromFirestore(DocumentSnapshot doc) {
+    Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+    return TransactionModel(
+      id: doc.id,
+      customerName: data['customerName'] ?? '',
+      customerId: data['customerId'] ?? '',
+      custId: data['custId'] ?? '', // ✅ read from Firestore
+      date: (data['date'] as Timestamp).toDate(),
+      amount: (data['amount'] ?? 0).toDouble(),
+      transactionType: data['transactionType'] ?? 0,
+      note: data['note'] ?? '',
+      invoiceNo: data['invoiceNo'] ?? '',
+      category: data['category'] ?? '',
+      discount: (data['discount'] ?? 0).toDouble(),
+      staffId: data['staffId'] ?? '',
+      gramPriceInvestDay: (data['gramPriceInvestDay'] ?? 0).toDouble(),
+      gramWeight: (data['gramWeight'] ?? 0).toDouble(),
+      branch: data['branch'] ?? '',
+      branchName: data["branchName"] ?? '',
+      staffName: data['staffName'] ?? '',
+      merchentTransactionId: data['merchentTransactionId'] ?? '',
+      transactionMode: data['transactionMode'] ?? '',
+      maturityDate: data['maturityDate'] != null
+          ? (data['maturityDate'] as Timestamp).toDate()
+          : DateTime.now(),
+      schemeName: data['schemeName'] ?? '',
+    );
+  }
+
+  Map<String, dynamic> toFirestore() {
+    return {
+      'customerName': customerName,
+      'customerId': customerId,
+      'custId': custId, // ✅ store in Firestore
+      'date': Timestamp.fromDate(date),
+      'amount': amount,
+      'transactionType': transactionType,
+      'note': note,
+      'invoiceNo': invoiceNo,
+      'category': category,
+      'discount': discount,
+      'staffId': staffId,
+      'gramPriceInvestDay': gramPriceInvestDay,
+      'gramWeight': gramWeight,
+      'branch': branch,
+      "branchName": branchName,
+      'staffName': staffName,
+      'merchentTransactionId': merchentTransactionId,
+      'transactionMode': transactionMode,
+      'maturityDate': Timestamp.fromDate(maturityDate),
+      'schemeName': schemeName,
+    };
+  }
+
+  bool get isReceipt => transactionType == 0;
+  bool get isPurchase => transactionType == 1;
 
   /// copyWith function to update only specific fields
   TransactionModel copyWith({
     String? id,
     String? customerName,
     String? customerId,
+    String? custId, // ✅ copyWith
     DateTime? date,
     double? amount,
     int? transactionType,
@@ -58,15 +127,18 @@ class TransactionModel {
     double? gramPriceInvestDay,
     double? gramWeight,
     String? branch,
-    String? staffName,
     String? branchName,
+    String? staffName,
     String? merchentTransactionId,
     String? transactionMode,
+    DateTime? maturityDate,
+    String? schemeName,
   }) {
     return TransactionModel(
       id: id ?? this.id,
       customerName: customerName ?? this.customerName,
       customerId: customerId ?? this.customerId,
+      custId: custId ?? this.custId, // ✅ keep
       date: date ?? this.date,
       amount: amount ?? this.amount,
       transactionType: transactionType ?? this.transactionType,
@@ -78,11 +150,13 @@ class TransactionModel {
       gramPriceInvestDay: gramPriceInvestDay ?? this.gramPriceInvestDay,
       gramWeight: gramWeight ?? this.gramWeight,
       branch: branch ?? this.branch,
-      staffName: staffName ?? this.staffName,
       branchName: branchName ?? this.branchName,
+      staffName: staffName ?? this.staffName,
       merchentTransactionId:
           merchentTransactionId ?? this.merchentTransactionId,
       transactionMode: transactionMode ?? this.transactionMode,
+      maturityDate: maturityDate ?? this.maturityDate,
+      schemeName: schemeName ?? this.schemeName,
     );
   }
 }
@@ -361,19 +435,21 @@ class TransactionProvider with ChangeNotifier {
         "currentBalance": newbalance,
         "currentBalanceGram": gramTotalWeightFinalFixed,
         "tax": tax,
-        "amc": amc
+        "amc": amc,
+        "branch": transactionModel.branch,
+        "branchName": transactionModel.branchName,
+        "custId": transactionModel.custId,
+        "maturityDate": transactionModel.maturityDate, // ✅ +1 year
+        "schemeName": transactionModel.schemeName,
       });
-      print("==== ===== ====== ===== ======== = = = = ");
-      print(transactionModel.customerId);
-      print(newbalance);
-      print(gramTotalWeightFinalFixed);
-      print(transactionModel.amount);
+
       await collectionReferenceSchemeUser
           .doc(transactionModel.customerId)
           .update({
         'balance': newbalance,
         'total_gram': gramTotalWeightFinalFixed,
-        'openingAmount': transactionModel.amount
+        'openingAmount': transactionModel.amount,
+        "lastPaidDate": DateTime.now()
       });
       notifyListeners();
 

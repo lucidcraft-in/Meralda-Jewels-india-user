@@ -4,14 +4,22 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:meralda_gold_user/model/customerModel.dart';
 import 'package:meralda_gold_user/web/widgets/noSchemeWidget.dart';
+import 'package:phonepe_payment_sdk/phonepe_payment_sdk.dart';
 import 'package:provider/provider.dart';
+import 'package:quickalert/quickalert.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../common/colo_extension.dart';
+import '../../functions/SHA256.dart';
+import '../../functions/base64.dart';
 import '../../providers/account_provider.dart';
 import '../../providers/goldrate.dart';
+
+import '../../providers/phonePe_payment.dart';
 import '../../providers/transaction.dart';
 import '../../providers/user.dart';
+import '../../screens/paymentResponseScreen.dart';
+import '../apiService/phonepeAuth.dart';
 
 class RightPanalProfile extends StatefulWidget {
   RightPanalProfile({super.key, required this.user});
@@ -35,25 +43,27 @@ class _rightPanalProfileState extends State<RightPanalProfile>
   bool _isLoading = false;
   // Transaction model
   var _transaction = TransactionModel(
-    id: '',
-    customerName: '',
-    customerId: '',
-    date: DateTime.now(),
-    amount: 0,
-    transactionType: 0,
-    note: '',
-    invoiceNo: '',
-    category: '',
-    discount: 0,
-    staffId: '',
-    gramPriceInvestDay: 0,
-    gramWeight: 0,
-    branch: "",
-    branchName: "",
-    staffName: "",
-    merchentTransactionId: "",
-    transactionMode: 'Direct',
-  );
+      id: '',
+      customerName: '',
+      customerId: '',
+      date: DateTime.now(),
+      amount: 0,
+      transactionType: 0,
+      note: '',
+      invoiceNo: '',
+      category: '',
+      discount: 0,
+      staffId: '',
+      gramPriceInvestDay: 0,
+      gramWeight: 0,
+      branch: "",
+      branchName: "",
+      staffName: "",
+      merchentTransactionId: "",
+      transactionMode: 'Direct',
+      custId: "",
+      schemeName: "",
+      maturityDate: DateTime.now());
   String selectedValue = 'Gold';
   @override
   void initState() {
@@ -112,33 +122,6 @@ class _rightPanalProfileState extends State<RightPanalProfile>
     //   branch: branchId,
     // );
   }
-
-  // void _initializeData(SchemeUserModel activeAccount) {
-  //   setState(() {
-  //     amountCntrl.text = activeAccount.openingAmount.toString();
-  //     taxCntrl.text = activeAccount.tax?.toString() ?? '0';
-  //     amcCntrl.text = activeAccount.amc?.toString() ?? '0';
-
-  //     _transaction = TransactionModel(
-  //       customerName: activeAccount.name,
-  //       customerId: widget.user.id!,
-  //       date: DateTime.now(),
-  //       amount: double.parse(amountCntrl.text),
-  //       transactionType: 0,
-  //       note: '',
-  //       invoiceNo: '',
-  //       category: selectedValue,
-  //       discount: 0,
-  //       staffId: '',
-  //       gramPriceInvestDay: double.parse(grampPerdayController.text),
-  //       gramWeight: 0,
-  //       branch: 0,
-  //       merchentTransactionId: "",
-  //       transactionMode: 'Direct',
-  //       id: '',
-  //     );
-  //   });
-  // }
 
   bool isTransaFirst = false;
   TransactionProvider? db;
@@ -448,7 +431,14 @@ class _rightPanalProfileState extends State<RightPanalProfile>
                             color: Colors.transparent,
                             child: InkWell(
                               onTap: () {
-                                _isLoading ? null : _saveForm(activeAccount);
+                                _isLoading
+                                    ? null
+                                    :
+                                    // : tokenGenarate(
+                                    //     amountCntrl.text,
+                                    //     descriptionController.text,
+                                    //     activeAccount);
+                                    _saveForm(activeAccount);
                               },
                               borderRadius: BorderRadius.circular(16),
                               child: Container(
@@ -706,36 +696,41 @@ class _rightPanalProfileState extends State<RightPanalProfile>
   }
 
   Future<void> _saveForm(SchemeUserModel activeAc) async {
+    // Auto-generate invoice number
+    String invoiceNo = "ONLN${DateTime.now().millisecondsSinceEpoch}";
+
     _transaction = _transaction.copyWith(
-        merchentTransactionId: "",
-        customerName: widget.user.name,
-        customerId: widget.user.id!,
-        date: DateTime.now(),
-        note: descriptionController.text,
-        transactionMode: 'Direct',
-        gramPriceInvestDay: grampPerdayAmount,
-        amount: double.parse(
-          amountCntrl.text,
-        ),
-        branch: activeAc.branch,
-        branchName: activeAc.branchName,
-        staffId: activeAc.staffId,
-        staffName: activeAc.staffName);
+      invoiceNo: invoiceNo, // ✅ Auto-generated
+      merchentTransactionId: "",
+      customerName: widget.user.name,
+      customerId: widget.user.id!,
+      date: DateTime.now(),
+      note: descriptionController.text,
+      transactionMode: 'online',
+      gramPriceInvestDay: grampPerdayAmount,
+      amount: double.parse(amountCntrl.text),
+      branch: activeAc.branch,
+      branchName: activeAc.branchName,
+      staffId: activeAc.staffId,
+      staffName: activeAc.staffName,
+      custId: widget.user.custId,
+      maturityDate: DateTime.now().add(const Duration(days: 365)), // +1 year
+      schemeName: widget.user.schemeType,
+    );
 
     if (activeAc.status == CustomerStatus.pending) {
       _showRightSnackBar(context, 'Please wait for verification', Colors.red);
-
       return;
     }
+
     if (activeAc.status == CustomerStatus.rejected) {
-      _showRightSnackBar(context, 'Your account has rejected', Colors.red);
-
+      _showRightSnackBar(context, 'Your account has been rejected', Colors.red);
       return;
     }
+
     if (!_formKey.currentState!.validate()) {
       _showRightSnackBar(
           context, 'Please fill all required fields correctly!', Colors.red);
-
       return;
     }
 
@@ -747,10 +742,10 @@ class _rightPanalProfileState extends State<RightPanalProfile>
           'Minimum amount required is 2000 for this scheme', Colors.red);
       return;
     }
+
     setState(() => _isLoading = true);
 
     try {
-      final prefs = await SharedPreferences.getInstance();
       final transactionProvider =
           Provider.of<TransactionProvider>(context, listen: false);
       final data = await transactionProvider.createDirect(_transaction, 0, 0);
@@ -808,103 +803,6 @@ class _rightPanalProfileState extends State<RightPanalProfile>
       ),
     );
   }
-
-//   void _showHistoryDialog(BuildContext context, SchemeUserModel user) {
-//     print(transactions);
-//     showGeneralDialog(
-//       context: context,
-//       barrierDismissible: true,
-//       barrierLabel: '',
-//       transitionDuration: const Duration(milliseconds: 300),
-//       pageBuilder: (context, animation1, animation2) {
-//         return Align(
-//           alignment: Alignment.centerRight,
-//           child: Material(
-//             color: Colors.transparent,
-//             child: Container(
-//               width: 400,
-//               margin: const EdgeInsets.only(right: 20, top: 50, bottom: 50),
-//               padding: const EdgeInsets.all(20),
-//               decoration: BoxDecoration(
-//                 color: Colors.white,
-//                 borderRadius: BorderRadius.circular(16),
-//                 boxShadow: [
-//                   BoxShadow(
-//                     color: Colors.black.withOpacity(0.1),
-//                     blurRadius: 10,
-//                     offset: const Offset(-5, 0),
-//                   ),
-//                 ],
-//               ),
-//               child: Column(
-//                 crossAxisAlignment: CrossAxisAlignment.start,
-//                 children: [
-//                   // header
-//                   Row(
-//                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//                     children: [
-//                       const Text(
-//                         'Payment History',
-//                         style: TextStyle(
-//                           fontSize: 20,
-//                           fontWeight: FontWeight.bold,
-//                         ),
-//                       ),
-//                       IconButton(
-//                         icon: const Icon(Icons.close),
-//                         onPressed: () => Navigator.pop(context),
-//                       ),
-//                     ],
-//                   ),
-//                   const SizedBox(height: 20),
-
-//                   // transactions list
-//                   Expanded(
-//                       child: ListView.separated(
-//                     itemCount: transactions.length,
-//                     separatorBuilder: (_, __) => Divider(),
-//                     itemBuilder: (context, index) {
-//                       print(transactions[index]);
-//                       final tx = transactions[index];
-//                       transactions.length;
-//                       return ListTile(
-//                         leading: Icon(
-//                           tx["amount"] >= 0
-//                               ? Icons.arrow_downward
-//                               : Icons.arrow_upward,
-//                           color: tx["amount"] >= 0 ? Colors.green : Colors.red,
-//                         ),
-//                         title: Text(tx["note"]),
-//                         // subtitle: Text(
-//                         //   "${tx["date"].toLocal()}".split(" ")[0],
-//                         // ),
-//                         trailing: Text(
-//                           "${tx["amount"] >= 0 ? '+' : ''}${tx["amount"]} ₹",
-//                           style: TextStyle(
-//                             fontWeight: FontWeight.bold,
-//                             color:
-//                                 tx["amount"] >= 0 ? Colors.green : Colors.red,
-//                           ),
-//                         ),
-//                       );
-//                     },
-//                   )),
-//                 ],
-//               ),
-//             ),
-//           ),
-//         );
-//       },
-//       transitionBuilder: (context, animation1, animation2, child) {
-//         return SlideTransition(
-//           position: Tween(begin: const Offset(1, 0), end: Offset.zero)
-//               .animate(animation1),
-//           child: child,
-//         );
-//       },
-//     );
-//   }
-// }
 
   void _showHistoryDialog(
       BuildContext context, SchemeUserModel user, List txn) {
@@ -1036,6 +934,13 @@ class _rightPanalProfileState extends State<RightPanalProfile>
                                             color: Colors.grey[800],
                                           ),
                                         ),
+                                        Text(
+                                          "Invoice No : ${tx["invoiceNo"]}",
+                                          style: TextStyle(
+                                            color: Colors.grey[600],
+                                            fontSize: 14,
+                                          ),
+                                        ),
                                         SizedBox(height: 4),
                                         Row(
                                           children: [
@@ -1135,5 +1040,262 @@ class _rightPanalProfileState extends State<RightPanalProfile>
         );
       },
     );
+  }
+
+  String environment = "PRODUCTION";
+  String merchantId = "M23L8P15TXS00";
+  tokenGenarate(String amt, String note, SchemeUserModel user) async {
+    var amount = double.parse(amt);
+    print(user.custId);
+    print(amount);
+    try {
+      print("======");
+      var data = phonePe_PaymentModel(
+          merchantId: merchantId,
+          custId: user.custId,
+          custName: user.name,
+          amount: amount,
+          note: note,
+          custPhone: double.parse(user.phoneNo),
+          currency: "INR",
+          status: "Initaiated");
+      print("---- --");
+      print(data.toJson());
+      firebaseInsert(data, user);
+    } catch (e) {
+      print('An error occurred: $e');
+      setState(() {
+        _isLoading = false;
+      });
+    }
+    // firebaseInsert(data);
+  }
+
+  String transactionId = "";
+  firebaseInsert(phonePe_PaymentModel data, SchemeUserModel user) {
+    print(data.toJson());
+    var db = phonePe_Payment();
+    db.initiliase();
+    db.addTransaction(data).then((value) {
+      print("----payment data ----");
+      setState(() {
+        transactionId = value.toUpperCase();
+      });
+      print("----- Firebase insert ----------");
+      print(transactionId);
+      if (transactionId != "") {
+        getchecksum(transactionId, user);
+      } else {
+        // print("----- Firebase insert error----------");
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    });
+  }
+
+  String checksum = "";
+  String saltKey = "7e700076-d1da-48a3-b728-c9c318cceca2";
+  String saltIndex = "1";
+  String body = "";
+  getchecksum(String transId, SchemeUserModel user) {
+    final reqData = {
+      "merchantId": merchantId,
+      "merchantTransactionId": transId,
+      "merchantUserId": user.custId,
+      "amount": num.parse("1") * 100,
+      "mobileNumber": double.parse(user.phoneNo),
+      "callbackUrl":
+          "https://us-central1-malabari-jewellery.cloudfunctions.net/app/api/create",
+      "paymentInstrument": {
+        "type": "PAY_PAGE",
+      },
+    };
+    try {
+      setState(() {
+        String base64 = encodeJsonToBase64(reqData);
+        String input = base64 + "/pg/v1/pay" + saltKey;
+        checksum = "${convertToSHA256(input)}###${saltIndex}";
+        body = base64;
+      });
+      startTransaction(user, transId);
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  String callbackUrl =
+      "https://us-central1-malabari-jewellery.cloudfunctions.net/app/api/create";
+  Object? result;
+  String packageName = "com.example.malabari_jewellery";
+  // void startTransaction(SchemeUserModel user, String transId) async {
+  //   try {
+  //     print("=======");
+
+  //     final data = await PhonePePaymentSdk.startTransaction(
+  //             body, callbackUrl, checksum, packageName)
+  //         .then((response) {
+  //       setState(() {
+  //         print("===== ===");
+  //         print(response);
+  //         if (response != null) {
+  //           String status = response['status'].toString();
+  //           String error = response['error'].toString();
+  //           print(status);
+  //           print(error);
+  //           setState(() {
+  //             _isLoading = false;
+  //           });
+  //           if (status == 'SUCCESS') {
+  //             result = "Flow Completed - Status: Success!";
+  //             isSuccess(user, transId);
+  //           } else {
+  //             isfaild(transId);
+  //             result = "Flow Completed - Status: $status and Error: $error";
+  //           }
+  //         } else {
+  //           print("------ ++++++++");
+  //           print(response);
+  //           result = "Flow Incomplete";
+  //         }
+  //       });
+  //     }).catchError((error) {
+  //       return <dynamic>{};
+  //     });
+
+  //     print("===   =====");
+  //     print(data);
+  //   } catch (error) {
+  //     setState(() {
+  //       _isLoading = false;
+  //     });
+  //     print(error);
+  //   }
+  // }
+
+  void startTransaction(SchemeUserModel user, String transId) async {
+    setState(() {
+      _isLoading = true;
+    });
+    try {
+      final authToken = await generateAuthToken();
+      if (authToken == null) {
+        result = "Failed to get auth token";
+        return;
+      }
+      await createPayment(authToken, transId);
+    } catch (e) {
+      print(e);
+    }
+    // try {
+    //   print("======= Starting PhonePe Transaction =======");
+
+    //   final response = await PhonePePaymentSdk.startTransaction(
+    //     body,
+    //     callbackUrl,
+    //     checksum,
+    //     packageName,
+    //   ).catchError((error) {
+    //     // Ensure same type is returned
+    //     print("Transaction error (catchError): $error");
+    //     return <String, dynamic>{
+    //       'status': 'FAILED',
+    //       'error': error.toString(),
+    //     };
+    //   });
+
+    //   print("===== Transaction Response =====");
+    //   print(response);
+
+    //   if (response != null) {
+    //     final status = response['status']?.toString() ?? "UNKNOWN";
+    //     final error = response['error']?.toString() ?? "NONE";
+
+    //     print("Status: $status");
+    //     print("Error: $error");
+
+    //     if (status == 'SUCCESS') {
+    //       result = "Flow Completed - Status: Success!";
+    //       isSuccess(user, transId);
+    //     } else {
+    //       result = "Flow Completed - Status: $status and Error: $error";
+    //       isfaild(transId);
+    //     }
+    //   } else {
+    //     print("------ Response is NULL ------");
+    //     result = "Flow Incomplete";
+    //   }
+    // } catch (e) {
+    //   print("Exception in startTransaction: $e");
+    //   result = "Exception occurred: $e";
+    // } finally {
+    //   setState(() {
+    //     _isLoading = false;
+    //   });
+    // }
+  }
+
+  isfaild(String transId) {
+    var res = {
+      "code": "Failed",
+      "amount": amountCntrl.text,
+      "type": "online",
+      "transactionId": transId
+    };
+    var db = phonePe_Payment();
+    db.initiliase();
+    db.updateTransaction(transId, "PAYMENT_ERROR");
+    QuickAlert.show(
+        context: context,
+        type: QuickAlertType.error,
+        title: 'Oops...',
+        text: 'Sorry, Payment Failed',
+        confirmBtnColor: Theme.of(context).primaryColor,
+        confirmBtnTextStyle: TextStyle(
+            fontSize: 13, color: Colors.white, fontWeight: FontWeight.bold),
+        onConfirmBtnTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ResponseScreen(
+                response: res,
+              ),
+            ),
+          );
+        });
+  }
+
+  isSuccess(SchemeUserModel user, String transId) {
+    var res = {
+      "code": "PAYMENT_SUCCESS",
+      "amount": amountCntrl.text,
+      "type": "online",
+      "transactionId": transId
+    };
+    var db = phonePe_Payment();
+    db.initiliase();
+    db.updateTransaction(transId, "PAYMENT_SUCCESS");
+    _saveForm(
+      user,
+    );
+    QuickAlert.show(
+        context: context,
+        type: QuickAlertType.success,
+        text: 'Transaction Completed Successfully!',
+        confirmBtnColor: Theme.of(context).primaryColor,
+        confirmBtnTextStyle: TextStyle(
+            fontSize: 13, color: Colors.white, fontWeight: FontWeight.bold),
+        onConfirmBtnTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ResponseScreen(
+                response: res,
+              ),
+            ),
+          );
+        });
   }
 }

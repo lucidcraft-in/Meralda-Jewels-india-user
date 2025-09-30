@@ -260,8 +260,55 @@ class _WebprofileState extends State<Webprofile> with TickerProviderStateMixin {
             Expanded(child: _buildDocumentCard()),
           ],
         ),
-        const SizedBox(height: 20),
+        const SizedBox(width: 20),
+        // _buildBankDetailsCard(),
+        // const SizedBox(height: 20),
         _buildActionButtons(),
+      ],
+    );
+  }
+
+  Widget _buildBankDetailsCard() {
+    final bank = localUserData!.bankDetails;
+
+    return _buildSectionCard(
+      title: 'Bank Details',
+      icon: Icons.account_balance,
+      children: [
+        _buildInfoTile(
+          icon: Icons.account_balance,
+          label: 'Bank Name',
+          value: bank?.bankName ?? 'Not provided',
+        ),
+        _buildInfoTile(
+          icon: Icons.credit_card,
+          label: 'Account Number',
+          value: bank?.accountNumber ?? 'Not provided',
+        ),
+        _buildInfoTile(
+          icon: Icons.code,
+          label: 'IFSC',
+          value: bank?.ifsc ?? 'Not provided',
+        ),
+        _buildInfoTile(
+          icon: Icons.location_city,
+          label: 'Branch',
+          value: bank?.branch ?? 'Not provided',
+        ),
+        const SizedBox(height: 12),
+        ElevatedButton(
+          onPressed: () {
+            // _showBankDetailsDialog(user.id!, bank);
+          },
+          child: Text(bank == null ? 'Add Bank Details' : 'Edit Bank Details'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.blueGrey[800],
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        ),
       ],
     );
   }

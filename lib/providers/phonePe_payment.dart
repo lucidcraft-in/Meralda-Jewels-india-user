@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
@@ -20,6 +22,33 @@ class phonePe_PaymentModel {
       required this.merchantId,
       required this.currency,
       required this.status});
+  @override
+  String toString() {
+    return '''
+phonePe_PaymentModel(
+  merchantId: $merchantId,
+  custId: $custId,
+  custName: $custName,
+  amount: $amount,
+  note: $note,
+  custPhone: $custPhone,
+  currency: $currency,
+  status: $status
+)''';
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      "merchantId": merchantId,
+      "custId": custId,
+      "custName": custName,
+      "amount": amount,
+      "note": note,
+      "custPhone": custPhone,
+      "currency": currency,
+      "status": status,
+    };
+  }
 }
 
 class phonePe_Payment with ChangeNotifier {
@@ -30,36 +59,28 @@ class phonePe_Payment with ChangeNotifier {
 
   CollectionReference collectionReference =
       FirebaseFirestore.instance.collection('online_Transaction');
-  String cmpnyCode = "MLBR";
-  Future addTransaction(var paymentData) async {
+  String cmpnyCode = "MRLD";
+  Future addTransaction(phonePe_PaymentModel paymentData) async {
     DateTime now = DateTime.now();
     String id = "";
-    // DocumentReference docRef =
-    print("+++++++");
-    // print(paymentData["custId"]);
-    // print(paymentData["TransactionId"]);
-    // print(paymentData.custId);
-
-    // print(paymentData.custName);
-    // print(paymentData.amount);
-    // print(paymentData.custId);
-    await collectionReference.add({
-      "custId": paymentData["custId"],
-      "order_Id": paymentData["TransactionId"],
-      "custName": paymentData["custName"],
-      "amount": paymentData["amount"],
-      "note": paymentData["note"],
+    DocumentReference docRef = await collectionReference.add({
+      "custId": paymentData.custId,
+      "TransactionId": "",
+      "custName": paymentData.custName,
+      "amount": paymentData.amount,
+      "note": paymentData.note,
       "date": now,
-      "custPhone": paymentData["custPhone"],
-      "currency": "INR",
-      "status": "Initated",
+      "custPhone": paymentData.custPhone,
+      "merchantId": paymentData.merchantId,
+      "currency": paymentData.currency,
+      "status": paymentData.status,
     });
 
-    // id = cmpnyCode + "_" + docRef.id.toUpperCase();
-    // docRef.update({
-    //   "TransactionId": id,
-    // });
-    // return id;
+    id = cmpnyCode + "_" + docRef.id.toUpperCase();
+    docRef.update({
+      "TransactionId": id,
+    });
+    return id;
   }
 
   updateTransaction(String orderId, String status) async {
@@ -67,7 +88,7 @@ class phonePe_Payment with ChangeNotifier {
       // Query the collection where 'orderId' matches the given value
       QuerySnapshot snapshot =
           await collectionReference // Replace with your collection name
-              .where('order_Id', isEqualTo: orderId)
+              .where('TransactionId', isEqualTo: orderId)
               .limit(1) // Limit the result to 1 document
               .get();
 

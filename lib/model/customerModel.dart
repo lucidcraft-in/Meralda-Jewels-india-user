@@ -2,7 +2,40 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 /// 🔹 Simple Customer Status Flow
 /// Created → Pending → Approved/Rejected
-enum CustomerStatus { pending, approved, rejected }
+enum CustomerStatus { pending, approved, rejected, closed }
+
+class BankDetailsModel {
+  final String? bankName;
+  final String? accountNumber;
+  final String? ifsc;
+  final String? branch;
+
+  BankDetailsModel({
+    this.bankName,
+    this.accountNumber,
+    this.ifsc,
+    this.branch,
+  });
+
+  factory BankDetailsModel.fromMap(Map<String, dynamic>? data) {
+    if (data == null) return BankDetailsModel();
+    return BankDetailsModel(
+      bankName: data['bankName']?.toString(),
+      accountNumber: data['accountNumber']?.toString(),
+      ifsc: data['ifsc']?.toString(),
+      branch: data['branch']?.toString(),
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'bankName': bankName,
+      'accountNumber': accountNumber,
+      'ifsc': ifsc,
+      'branch': branch,
+    };
+  }
+}
 
 class SchemeUserModel {
   final String? id;
@@ -40,6 +73,10 @@ class SchemeUserModel {
   final DateTime updatedDate;
   final CustomerStatus status;
 
+  // 🔹 New optional fields
+  final DateTime? lastPaidDate;
+  final BankDetailsModel? bankDetails;
+
   SchemeUserModel({
     this.id,
     required this.name,
@@ -74,6 +111,8 @@ class SchemeUserModel {
     required this.createdDate,
     required this.updatedDate,
     this.status = CustomerStatus.pending,
+    this.lastPaidDate,
+    this.bankDetails,
   });
 
   SchemeUserModel.fromData(Map<String, dynamic> data, String documentId)
@@ -109,7 +148,9 @@ class SchemeUserModel {
         password = data['password']?.toString(),
         createdDate = _parseDateTime(data['createdDate']),
         updatedDate = _parseDateTime(data['updatedDate']),
-        status = statusFromString(data['status']?.toString() ?? "created");
+        status = statusFromString(data['status']?.toString() ?? "pending"),
+        lastPaidDate = _parseDateTimeNullable(data['lastPaidDate']),
+        bankDetails = BankDetailsModel.fromMap(data['bankDetails']);
 
 // Helper methods for safe parsing
   static double _parseDouble(dynamic value) {
@@ -126,6 +167,14 @@ class SchemeUserModel {
     if (value is String) return DateTime.tryParse(value) ?? DateTime.now();
     if (value is DateTime) return value;
     return DateTime.now();
+  }
+
+  static DateTime? _parseDateTimeNullable(dynamic value) {
+    if (value == null) return null;
+    if (value is Timestamp) return value.toDate();
+    if (value is String) return DateTime.tryParse(value);
+    if (value is DateTime) return value;
+    return null;
   }
 
   /// 🔥 For Firestore - uses Timestamp objects
@@ -163,6 +212,9 @@ class SchemeUserModel {
       'createdDate': Timestamp.fromDate(createdDate),
       'updatedDate': Timestamp.fromDate(updatedDate),
       'status': status.name,
+      'lastPaidDate':
+          lastPaidDate != null ? Timestamp.fromDate(lastPaidDate!) : null,
+      'bankDetails': bankDetails?.toMap(),
     };
   }
 
@@ -202,19 +254,22 @@ class SchemeUserModel {
       'createdDate': createdDate.toIso8601String(),
       'updatedDate': updatedDate.toIso8601String(),
       'status': status.name,
+      'lastPaidDate': lastPaidDate?.toIso8601String(),
+      'bankDetails': bankDetails?.toMap(),
     };
   }
 
   /// 🔥 Fixed status mapping
   static CustomerStatus statusFromString(String value) {
     switch (value.toLowerCase()) {
-      // ✅ Fixed
       case "pending":
-        return CustomerStatus.pending; // ✅ Added
+        return CustomerStatus.pending;
       case "approved":
         return CustomerStatus.approved;
       case "rejected":
         return CustomerStatus.rejected;
+      case "closed":
+        return CustomerStatus.closed;
       default:
         return CustomerStatus.pending;
     }
@@ -228,6 +283,8 @@ class SchemeUserModel {
         return "approved";
       case CustomerStatus.rejected:
         return "rejected";
+      case CustomerStatus.closed:
+        return "closed";
     }
   }
 }

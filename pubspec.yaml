@@ -78,6 +78,7 @@ dependencies:
   video_player: ^2.9.5
   image_picker: ^1.1.2
   webview_flutter: ^4.8.0
+  phonepe_payment_sdk: ^2.0.3
 
 
 

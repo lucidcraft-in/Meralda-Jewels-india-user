@@ -52,28 +52,6 @@ class _WebPayAmountScreenState extends State<WebPayAmountScreen>
   TextEditingController grampPerdayController = TextEditingController();
   TextEditingController descriptionController = TextEditingController();
 
-  // Transaction model
-  var _transaction = TransactionModel(
-    id: '',
-    customerName: '',
-    customerId: '',
-    date: DateTime.now(),
-    amount: 0,
-    transactionType: 0,
-    note: '',
-    invoiceNo: '',
-    category: '',
-    discount: 0,
-    staffId: '',
-    gramPriceInvestDay: 0,
-    gramWeight: 0,
-    branch: "",
-    branchName: "",
-    staffName: "",
-    merchentTransactionId: "",
-    transactionMode: 'Direct',
-  );
-
   @override
   void initState() {
     super.initState();
