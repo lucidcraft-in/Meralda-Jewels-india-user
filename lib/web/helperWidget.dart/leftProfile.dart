@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../../common/colo_extension.dart';
 import '../../providers/account_provider.dart';
 import '../webBasicRag.dart';
+import '../webPayScreen.dart';
 import '../webProfile.dart';
 import '../webRegistration.dart';
 import 'helperWid.dart';
@@ -382,8 +383,13 @@ class _LeftPanelState extends State<LeftPanel> {
                     ...accounts.asMap().entries.map((entry) {
                       final acc = entry.value;
                       return GestureDetector(
-                        onTap: () => accountProvider.switchAccount(
-                            acc, entry.key, context),
+                        onTap: () {
+                          accountProvider.switchAccount(
+                              acc, entry.key, context);
+                          setState(() {
+                            isAmountInitialized = false;
+                          });
+                        },
                         child: _buildAccountCard(acc, entry.key, context),
                       );
                     }),

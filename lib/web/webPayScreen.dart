@@ -418,3 +418,5 @@ class _WebPayAmountScreenState extends State<WebPayAmountScreen>
     );
   }
 }
+
+bool isAmountInitialized = false;

@@ -20,6 +20,7 @@ import '../../providers/transaction.dart';
 import '../../providers/user.dart';
 import '../../screens/paymentResponseScreen.dart';
 import '../apiService/phonepeAuth.dart';
+import '../webPayScreen.dart';
 
 class RightPanalProfile extends StatefulWidget {
   RightPanalProfile({super.key, required this.user});
@@ -90,9 +91,11 @@ class _rightPanalProfileState extends State<RightPanalProfile>
 
   List<SchemeUserModel> userAccount = [];
   getUserAccount(SchemeUserModel activeAccount) async {
-    // _initializeData(activeAccount);
-    amountCntrl.text = activeAccount.openingAmount.toString();
-
+    // final accountProvider = context.read<AccountProvider>();
+    // setState(() {
+    //   amountCntrl.text =
+    //       accountProvider.currentAccount?.openingAmount.toString() ?? '2000';
+    // });
     // Future.microtask(() {
     //   if (widget.user.phoneNo != "") {
     //     context.read<AccountProvider>().loadAccounts(widget.user.phoneNo);
@@ -156,15 +159,232 @@ class _rightPanalProfileState extends State<RightPanalProfile>
     super.dispose();
   }
 
+  Widget _buildQuickAmountCards(double openingAmount) {
+    final List<int> quickMultipliers = [1, 2, 3, 6, 11];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          "Quick Amount Options",
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+            color: Colors.grey.shade800,
+          ),
+        ),
+        SizedBox(height: 12),
+        Wrap(
+          spacing: 10,
+          runSpacing: 10,
+          children: quickMultipliers.map((multiplier) {
+            double total = openingAmount * multiplier;
+            return GestureDetector(
+              onTap: () {
+                print("-----");
+                setState(() {
+                  amountCntrl.text = total.toStringAsFixed(2);
+                  isAmountInitialized = true;
+                });
+                print(amountCntrl.text);
+              },
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  border: Border.all(color: Colors.grey.shade300, width: 1.5),
+                  borderRadius: BorderRadius.circular(10),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 3,
+                      offset: Offset(0, 1),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      "${multiplier}x",
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      "₹${total.toStringAsFixed(0)}",
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.grey.shade800,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildInstallmentProgressCards() {
+    final accountProvider = context.read<AccountProvider>();
+    final currentAccount = accountProvider.currentAccount!;
+
+    // Calculate completed installments
+    double balance = currentAccount.balance;
+    double openingAmount = currentAccount.openingAmount;
+    int completedInstallments =
+        balance > 0 ? (balance / openingAmount).floor() : 0;
+    int totalInstallments = 11;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Header
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Installment Progress',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[800],
+              ),
+            ),
+            Text(
+              '$completedInstallments/$totalInstallments completed',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Colors.grey[600],
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: 12),
+
+        // Installment Cards
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: List.generate(11, (index) {
+              bool isCompleted = index < completedInstallments;
+              bool isCurrent = index == completedInstallments;
+
+              return Container(
+                width: 60,
+                margin: EdgeInsets.only(right: 8),
+                padding: EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: isCompleted
+                      ? Colors.green.shade50
+                      : isCurrent
+                          ? Colors.blue.shade50
+                          : Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: isCompleted
+                        ? Colors.green.shade300
+                        : isCurrent
+                            ? Colors.blue.shade300
+                            : Colors.grey.shade300,
+                    width: isCurrent ? 2 : 1,
+                  ),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '${index + 1}',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: isCompleted
+                            ? Colors.green.shade800
+                            : isCurrent
+                                ? Colors.blue.shade800
+                                : Colors.grey.shade600,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Icon(
+                      isCompleted ? Icons.check_circle : Icons.circle,
+                      size: 12,
+                      color: isCompleted
+                          ? Colors.green.shade600
+                          : isCurrent
+                              ? Colors.blue.shade600
+                              : Colors.grey.shade400,
+                    ),
+                  ],
+                ),
+              );
+            }),
+          ),
+        ),
+
+        // Progress Bar
+        SizedBox(height: 12),
+        Container(
+          height: 6,
+          decoration: BoxDecoration(
+            color: Colors.grey.shade200,
+            borderRadius: BorderRadius.circular(3),
+          ),
+          child: Stack(
+            children: [
+              Container(
+                width: (completedInstallments / totalInstallments) *
+                    MediaQuery.of(context).size.width,
+                decoration: BoxDecoration(
+                  color: completedInstallments == totalInstallments
+                      ? Colors.green.shade500
+                      : Colors.blue.shade500,
+                  borderRadius: BorderRadius.circular(3),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // Status Text
+        SizedBox(height: 8),
+        Text(
+          completedInstallments == totalInstallments
+              ? '✅ All installments completed!'
+              : '${totalInstallments - completedInstallments} installments remaining',
+          style: TextStyle(
+            fontSize: 12,
+            color: completedInstallments == totalInstallments
+                ? Colors.green.shade700
+                : Colors.grey.shade600,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final accountProvider = context.watch<AccountProvider>();
     final accounts = accountProvider.accounts;
-
+    print(accountProvider.currentAccount!.openingAmount);
     final activeAccount = accounts.isNotEmpty
         ? accounts[accountProvider.selectedAccountIndex]
         : null;
 
+    if (!isAmountInitialized) {
+      final openingAmount = accountProvider.currentAccount!.openingAmount;
+      amountCntrl.text = openingAmount.toString();
+    }
     if (activeAccount == null) {
       // Show loader while activeAccount is not loaded
       return Container();
@@ -235,7 +455,9 @@ class _rightPanalProfileState extends State<RightPanalProfile>
           ),
 
           SizedBox(height: 20),
+          _buildInstallmentProgressCards(),
 
+          SizedBox(height: 24),
           // Form Card
           Expanded(
             child: Card(
@@ -294,21 +516,12 @@ class _rightPanalProfileState extends State<RightPanalProfile>
 
                         SizedBox(height: 24),
 
-                        // Amount Field
-                        // _buildFormField(
-                        //   user: activeAccount,
-                        //   label: 'Payment Amount',
-                        //   controller: amountCntrl,
-                        //   isReadOnly: activeAccount.schemeType == "Wishlist",
-                        //   keyboardType: TextInputType.number,
-                        //   icon: Icons.currency_rupee,
-                        //   isImportant: true,
-                        // ),
                         TextFormField(
-                          controller: amountCntrl
-                            ..text = accountProvider
-                                .currentAccount!.openingAmount
-                                .toString(),
+                          controller: amountCntrl,
+                          readOnly: activeAccount.balance > 0 ? true : false,
+                          // ..text = accountProvider
+                          //     .currentAccount!.openingAmount
+                          //     .toString(),
                           keyboardType: TextInputType.number,
                           decoration: InputDecoration(
                             labelText: "Payment Amount",
@@ -327,6 +540,13 @@ class _rightPanalProfileState extends State<RightPanalProfile>
                             return null;
                           },
                         ),
+                        if (accountProvider.currentAccount!.balance != 0)
+                          SizedBox(height: 12),
+                        if (accountProvider.currentAccount!.balance != 0)
+                          _buildQuickAmountCards(
+                              accountProvider.currentAccount!.openingAmount),
+
+                        SizedBox(height: 20),
                         if (accountProvider.currentAccount!.schemeType ==
                             "Wishlist")
                           Padding(
