@@ -6,6 +6,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:meralda_gold_user/providers/collectionProvider.dart';
 import 'package:meralda_gold_user/screens/homeNavigation.dart';
+import 'package:meralda_gold_user/web/newHomeScreen/newwebhome.dart';
 import 'package:meralda_gold_user/web/webHome.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -26,6 +27,7 @@ import 'providers/staff.dart';
 import 'providers/transaction.dart';
 import 'providers/user.dart';
 import 'screens/newHomeScreen.dart';
+import 'web/payment/paymentStatusScreen.dart';
 import 'web/webPayScreen.dart';
 
 class GoldJewelryApp extends StatefulWidget {
@@ -94,6 +96,18 @@ class _GoldJewelryAppState extends State<GoldJewelryApp> {
             final user = snapshot.data;
 
             if (kIsWeb) {
+              final uri = Uri.base;
+              final status = uri.queryParameters['status'];
+              final txnId = uri.queryParameters['txnId'];
+
+              if (status != null && txnId != null) {
+                // 🧭 If redirected after payment, show status screen
+                return PaymentStatusDialog.screen(
+                  status: status, // Use actual status from URL
+                  txnId: txnId, // Use actual txnId from URL
+                );
+              }
+
               if (user != null) {
                 // If user exists → go to PayAmount
                 return WebPayAmountScreen(
@@ -103,7 +117,8 @@ class _GoldJewelryAppState extends State<GoldJewelryApp> {
                 );
               } else {
                 // If no user → go to Home
-                return WebHomeScreen();
+                return Newwebhome();
+                // return WebHomeScreen();
               }
             } else {
               return HomeNavigation();

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
-Widget noSchemeSec() {
+import '../webRegistration.dart';
+
+Widget noSchemeSec(var user) {
   return LayoutBuilder(
     builder: (context, constraints) {
       final isSmallScreen = constraints.maxWidth < 600;
@@ -57,6 +59,11 @@ Widget noSchemeSec() {
               ),
 
               SizedBox(height: 20),
+
+              // Add New Scheme Button
+              _buildAddAccountCard(context, user),
+
+              SizedBox(height: 16),
 
               // Info Card
               Container(
@@ -160,6 +167,11 @@ Widget noSchemeSec() {
                             height: 1.5,
                           ),
                         ),
+
+                        SizedBox(height: 16),
+
+                        // Add New Scheme Button
+                        _buildAddAccountCard(context, user),
                       ],
                     ),
                   ),
@@ -263,6 +275,11 @@ Widget noSchemeSec() {
 
               SizedBox(height: 24),
 
+              // Add New Scheme Button
+              _buildAddAccountCard(context, user),
+
+              SizedBox(height: 24),
+
               // Info Card
               Container(
                 padding: EdgeInsets.all(16),
@@ -311,5 +328,107 @@ Widget noSchemeSec() {
         );
       }
     },
+  );
+}
+
+Widget _buildAddAccountCard(BuildContext context, var user) {
+  return GestureDetector(
+    onTap: () {
+      print(user);
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => UserRegistrationDialog(
+          type: "add",
+          user: user,
+        ),
+      );
+    },
+    child: Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Color.fromARGB(255, 27, 69, 38).withOpacity(0.05),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Color.fromARGB(255, 27, 69, 38).withOpacity(0.05),
+          width: 1.5,
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // Left icon
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Color.fromARGB(255, 27, 69, 38),
+              borderRadius: BorderRadius.circular(50),
+            ),
+            child: const Icon(
+              Icons.add,
+              color: Colors.white,
+              size: 24,
+            ),
+          ),
+
+          const SizedBox(width: 14),
+
+          // Middle text section
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Add New Scheme',
+                  style: TextStyle(
+                    color: Color.fromARGB(255, 27, 69, 38),
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  'Create multiple schemes for customers',
+                  style: TextStyle(
+                    color: Color.fromARGB(255, 27, 69, 38),
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Right button
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Color.fromARGB(255, 27, 69, 38)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: const [
+                Icon(
+                  Icons.person_add,
+                  color: Color.fromARGB(255, 27, 69, 38),
+                  size: 14,
+                ),
+                SizedBox(width: 6),
+                Text(
+                  'Create',
+                  style: TextStyle(
+                    color: Color.fromARGB(255, 27, 69, 38),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    ),
   );
 }

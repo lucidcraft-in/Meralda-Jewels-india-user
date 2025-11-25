@@ -1,38 +1,37 @@
 <!DOCTYPE html>
 <html>
-<head>
-  <!--
-    If you are serving your web app in a path other than the root, change the
-    href value below to reflect the base path you are serving from.
+  <head>
+    <base href="$FLUTTER_BASE_HREF">
 
-    The path provided below has to start and end with a slash "/" in order for
-    it to work correctly.
+    <meta charset="UTF-8">
+    <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+    <meta name="description" content="A new Flutter project.">
 
-    For more details:
-    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="meralda_gold_user">
+    <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
-    This is a placeholder for base href that will be replaced by the value of
-    the `--base-href` argument provided to `flutter build`.
-  -->
-  <base href="$FLUTTER_BASE_HREF">
+    <link rel="icon" type="image/png" href="favicon.png" />
+    <title>meralda_gold_user</title>
+    <link rel="manifest" href="manifest.json">
 
-  <meta charset="UTF-8">
-  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="A new Flutter project.">
+    <!-- ✅ Include PhonePe Checkout script -->
+    <script src="https://mercury.phonepe.com/web/bundle/checkout.js" defer></script>
 
-  <!-- iOS meta tags & icons -->
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="meralda_gold_user">
-  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+    <!-- ✅ Define checkout function -->
+    <script>
+      window.checkout = (tokenUrl, type, callback) => {
+        if (window && window.PhonePeCheckout && window.PhonePeCheckout.transact) {
+          window.PhonePeCheckout.transact({ tokenUrl, callback, type });
+        } else {
+          console.error('❌ PhonePeCheckout not loaded or transact() missing');
+        }
+      };
+    </script>
+  </head>
 
-  <!-- Favicon -->
-  <link rel="icon" type="image/png" href="favicon.png"/>
-
-  <title>meralda_gold_user</title>
-  <link rel="manifest" href="manifest.json">
-</head>
-<body>
-  <script src="flutter_bootstrap.js" async></script>
-</body>
+  <body>
+    <script src="flutter_bootstrap.js" async></script>
+  </body>
 </html>

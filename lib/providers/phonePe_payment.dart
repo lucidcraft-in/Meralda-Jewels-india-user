@@ -2,6 +2,10 @@ import 'dart:convert';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:meralda_gold_user/model/customerModel.dart';
+import 'package:meralda_gold_user/providers/transaction.dart';
+
+import '../model/phonePeModel.dart';
 
 class phonePe_PaymentModel {
   String custId;
@@ -60,22 +64,50 @@ class phonePe_Payment with ChangeNotifier {
   CollectionReference collectionReference =
       FirebaseFirestore.instance.collection('online_Transaction');
   String cmpnyCode = "MRLD";
-  Future addTransaction(phonePe_PaymentModel paymentData) async {
+  Future addTransaction(phonePe_PaymentModel paymentData,
+      TransactionModel _transaction, SchemeUserModel user) async {
     DateTime now = DateTime.now();
     String id = "";
-    DocumentReference docRef = await collectionReference.add({
-      "custId": paymentData.custId,
-      "TransactionId": "",
-      "custName": paymentData.custName,
-      "amount": paymentData.amount,
-      "note": paymentData.note,
-      "date": now,
-      "custPhone": paymentData.custPhone,
-      "merchantId": paymentData.merchantId,
-      "currency": paymentData.currency,
-      "status": paymentData.status,
-    });
+    // DocumentReference docRef = await collectionReference.add({
+    //   "custId": paymentData.custId,
+    //   "TransactionId": "",
+    //   "custName": paymentData.custName,
+    //   "amount": paymentData.amount,
+    //   "note": paymentData.note,
+    //   "date": now,
+    //   "custPhone": paymentData.custPhone,
+    //   "merchantId": paymentData.merchantId,
+    //   "currency": paymentData.currency,
+    //   "status": paymentData.status,
+    //   "invoiceNo": _transaction.invoiceNo,
+    //   "customerName": _transaction.customerName,
+    //   "customerId": _transaction.custId,
+    //   "branch": user.branch,
+    //   "branchName": user.branchName,
+    //   "staffId": user.staffId,
+    //   "staffName": user.schemeType,
+    // });
 
+    final data = PaymentData(
+        custId: paymentData.custId,
+        custName: paymentData.custName,
+        custPhone: paymentData.custPhone,
+        amount: paymentData.amount,
+        note: _transaction.note,
+        merchantId: "MERCHANT123",
+        currency: "INR",
+        status: "PENDING",
+        schemeName: user.schemeType,
+        invoiceNo: _transaction.invoiceNo,
+        customerName: _transaction.customerName,
+        customerId: user.id!,
+        branch: user.branch,
+        branchName: user.branchName!,
+        staffId: user.staffId,
+        staffName: user.staffName!,
+        date: DateTime.now(),
+        openingAmount: user.openingAmount);
+    DocumentReference docRef = await collectionReference.add(data.toJson());
     id = cmpnyCode + "_" + docRef.id.toUpperCase();
     docRef.update({
       "TransactionId": id,

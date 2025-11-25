@@ -34,6 +34,21 @@ class CustomFooter extends StatelessWidget {
                   ),
                 ],
               ),
+              Wrap(
+                alignment: WrapAlignment.center,
+                spacing: 20,
+                children: [
+                  _footerLink("Terms Of Use", context,
+                      () => showTermsAndConditionsDialog(context)),
+                  _footerLink("Privacy Policy", context,
+                      () => showPrivacyPolicyDialog(context)),
+                  _footerLink("Contact Us", context,
+                      () => showContactUsDialog(context)),
+                  // _footerLink("FAQ", context, () => showFAQDialog(context)),
+                  // _footerLink(
+                  //     "Feedback", context, () => showFeedbackDialog(context)),
+                ],
+              ),
               Row(
                 children: [
                   _socialIcon(FontAwesomeIcons.facebookF,
@@ -50,40 +65,21 @@ class CustomFooter extends StatelessWidget {
           ),
           const SizedBox(height: 30),
 
-          // 🔹 Links Row (clickable)
           // Wrap(
           //   alignment: WrapAlignment.center,
           //   spacing: 20,
           //   children: [
+          //     _footerLink("Terms Of Use", context,
+          //         () => showTermsAndConditionsDialog(context)),
+          //     _footerLink("Privacy Policy", context,
+          //         () => showPrivacyPolicyDialog(context)),
           //     _footerLink(
-          //         "Terms Of Use",
-          //         "https://docs.google.com/document/d/1RuN2P5O6hEA3I3TBxqjVaXnNGhTdBLpxCmxzEHBmK10/edit?usp=sharing",
-          //         context),
-          //     _footerLink(
-          //         "Privacy Policy",
-          //         "https://docs.google.com/document/d/1RuN2P5O6hEA3I3TBxqjVaXnNGhTdBLpxCmxzEHBmK10/edit?usp=sharing",
-          //         context),
-          //     _footerLink("Contact Us", "support@meraldajewels.com", context),
-          //     _footerLink("FAQ", "support@meraldajewels.com", context),
-          //     _footerLink(
-          //         "Feedback", "https://yourdomain.com/feedback", context),
+          //         "Contact Us", context, () => showContactUsDialog(context)),
+          //     // _footerLink("FAQ", context, () => showFAQDialog(context)),
+          //     // _footerLink(
+          //     //     "Feedback", context, () => showFeedbackDialog(context)),
           //   ],
           // ),
-          Wrap(
-            alignment: WrapAlignment.center,
-            spacing: 20,
-            children: [
-              _footerLink("Terms Of Use", context,
-                  () => showTermsAndConditionsDialog(context)),
-              _footerLink("Privacy Policy", context,
-                  () => showPrivacyPolicyDialog(context)),
-              _footerLink(
-                  "Contact Us", context, () => showContactUsDialog(context)),
-              // _footerLink("FAQ", context, () => showFAQDialog(context)),
-              // _footerLink(
-              //     "Feedback", context, () => showFeedbackDialog(context)),
-            ],
-          ),
           const SizedBox(height: 20),
 
           // 🔹 Copyright

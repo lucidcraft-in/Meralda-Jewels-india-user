@@ -54,7 +54,7 @@ class LocationSection extends StatelessWidget {
               children: locations.map((loc) {
                 return Container(
                   width: 260,
-                  height: 400,
+                  height: 300,
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [

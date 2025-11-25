@@ -375,7 +375,7 @@ class _ResponseScreenState extends State<ResponseScreen> {
                                           ),
                                           Padding(
                                             padding: const EdgeInsets.all(8.0),
-                                            child: Text("Prakash Jewellery"),
+                                            child: Text("Meralda Jewels"),
                                           ),
                                           Padding(
                                             padding: const EdgeInsets.all(8.0),

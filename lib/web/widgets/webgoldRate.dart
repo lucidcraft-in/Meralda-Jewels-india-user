@@ -82,15 +82,28 @@ class _GoldRateSectionState extends State<GoldRateSection> {
               Row(
                 children: [
                   Expanded(
-                      child:
-                          _buildGoldRateCard(0, "Per Gram", "₹$gram", "+$up")),
+                    child: GoldRateCard(
+                      title: "Per Gram",
+                      price: "₹$gram",
+                      change: "+$up",
+                    ),
+                  ),
                   const SizedBox(width: 12),
                   Expanded(
-                      child: _buildGoldRateCard(1, "18 Gram", "₹$eighteenGram",
-                          down > 0 ? "-$down" : "+$up")),
+                    child: GoldRateCard(
+                      title: "18 Gram",
+                      price: "₹$eighteenGram",
+                      change: down > 0 ? "-$down" : "+$up",
+                    ),
+                  ),
                   const SizedBox(width: 12),
                   Expanded(
-                      child: _buildGoldRateCard(2, "Pavan", "₹$pavan", "+$up")),
+                    child: GoldRateCard(
+                      title: "Pavan",
+                      price: "₹$pavan",
+                      change: "+$up",
+                    ),
+                  ),
                 ],
               ),
             ],
@@ -147,6 +160,87 @@ class _GoldRateSectionState extends State<GoldRateSection> {
                             color: change.startsWith("-")
                                 ? Colors.red
                                 : Colors.green)),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class GoldRateCard extends StatefulWidget {
+  final String title;
+  final String price;
+  final String change;
+
+  const GoldRateCard({
+    super.key,
+    required this.title,
+    required this.price,
+    required this.change,
+  });
+
+  @override
+  State<GoldRateCard> createState() => _GoldRateCardState();
+}
+
+class _GoldRateCardState extends State<GoldRateCard> {
+  bool _hovering = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovering = true),
+      onExit: (_) => setState(() => _hovering = false),
+      child: AnimatedScale(
+        duration: const Duration(milliseconds: 200),
+        scale: _hovering ? 1.05 : 1.0,
+        child: Card(
+          elevation: _hovering ? 10 : 6,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(widget.title,
+                    style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87)),
+                const SizedBox(height: 8),
+                Text(widget.price,
+                    style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black)),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Icon(
+                      widget.change.startsWith("-")
+                          ? Icons.trending_down
+                          : Icons.trending_up,
+                      color: widget.change.startsWith("-")
+                          ? Colors.red
+                          : Colors.green,
+                      size: 18,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      widget.change,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: widget.change.startsWith("-")
+                            ? Colors.red
+                            : Colors.green,
+                      ),
+                    ),
                   ],
                 ),
               ],

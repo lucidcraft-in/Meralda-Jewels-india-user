@@ -137,6 +137,11 @@ flutter:
       fonts:
         - asset: assets/font/ArsenicaTrial-Medium.ttf
           weight: 400
+
+    - family: playfair
+      fonts:
+         - asset: assets/font/playfair-display.bold.ttf
+          
        
          
   # fonts:

@@ -212,29 +212,14 @@ class TransactionProvider with ChangeNotifier {
         }
       }
 
-      // if (transactionModel.transactionType == 0) {
-      // gram wait for recieve
       gramWeight = transactionModel.amount! / goldRate.docs[0]['gram'];
-      // } else {
-      //   // gram weight for purchase
-      //   transactionQuerySnapshot = await collectionReference
-      //       .orderBy('timestamp', descending: true)
-      //       .get();
 
-      //   if (averageRate != 0) {
-      //     gramWeight = transactionModel.amount! / averageRate;
-      //   }
-      // }
       double gramWeightFixed = double.parse(gramWeight.toStringAsFixed(4));
 
       // if (transactionModel.transactionType == 0) {
       newbalance = oldBalance + transactionModel.amount!;
 
       gramTotalWeightFinal = gramTotalWeight + gramWeight;
-      // } else if (transactionModel.transactionType == 1) {
-      //   newbalance = oldBalance - transactionModel.amount!;
-      //   gramTotalWeightFinal = gramTotalWeight - gramWeight;
-      // }
 
       double gramTotalWeightFinalFixed =
           double.parse(gramTotalWeightFinal.toStringAsFixed(4));
@@ -242,6 +227,7 @@ class TransactionProvider with ChangeNotifier {
       await collectionReference.add({
         'customerName': transactionModel.customerName,
         'customerId': transactionModel.customerId,
+        'custId': transactionModel.custId,
         'date': transactionModel.date,
         'amount': transactionModel.amount,
         'transactionType': transactionModel.transactionType,
@@ -466,6 +452,26 @@ class TransactionProvider with ChangeNotifier {
       ];
     } catch (e) {
       print(e);
+    }
+  }
+
+  Future<Map<String, dynamic>?> getTransactionById(String transId) async {
+    try {
+      final snapshot = await collectionReference
+          .where('merchentTransactionId', isEqualTo: transId)
+          .limit(1)
+          .get();
+
+      if (snapshot.docs.isNotEmpty) {
+        // ✅ Explicitly cast the document data to Map<String, dynamic>
+        final data = snapshot.docs.first.data() as Map<String, dynamic>;
+        return data;
+      } else {
+        return null;
+      }
+    } catch (e) {
+      print('Error fetching transaction: $e');
+      return null;
     }
   }
 }

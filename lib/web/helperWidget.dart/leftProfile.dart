@@ -120,6 +120,92 @@ class _LeftPanelState extends State<LeftPanel> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Account Status at the top with trending design
+                    Container(
+                      width: double.infinity,
+                      padding: EdgeInsets.all(16),
+                      margin: EdgeInsets.only(bottom: 20),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: getStatusColors(activeAccount.status),
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: getStatusBorderColor(activeAccount.status),
+                          width: 1.5,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: getStatusShadowColor(activeAccount.status),
+                            blurRadius: 8,
+                            offset: Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Account Status',
+                                style: TextStyle(
+                                  color: Colors.black54,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                              SizedBox(height: 6),
+                              Row(
+                                children: [
+                                  Container(
+                                    width: 8,
+                                    height: 8,
+                                    decoration: BoxDecoration(
+                                      color: getStatusIndicatorColor(
+                                          activeAccount.status),
+                                      shape: BoxShape.circle,
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: getStatusIndicatorColor(
+                                                  activeAccount.status)
+                                              .withOpacity(0.5),
+                                          blurRadius: 4,
+                                          spreadRadius: 2,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    getStatusText(activeAccount.status),
+                                    style: TextStyle(
+                                      color: getStatusIndicatorColor(
+                                          activeAccount.status),
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: 0.3,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                          Icon(
+                            Icons.verified_outlined,
+                            color: getStatusIndicatorColor(activeAccount.status)
+                                .withOpacity(0.7),
+                            size: 32,
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Other account details below
                     if (activeAccount.name != "")
                       _buildInfoRow(
                         icon: Icons.badge_outlined,
@@ -146,121 +232,7 @@ class _LeftPanelState extends State<LeftPanel> {
                       label: 'Phone Number',
                       value: activeAccount.phoneNo ?? 'N/A',
                     ),
-                    SizedBox(height: 12),
-                    Container(
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 6, vertical: 6),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: Colors.white.withOpacity(0.2),
-                            width: 0.5,
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            Text(
-                              "Account Status  :   ",
-                              style: TextStyle(
-                                  color: Colors.white70, fontSize: 12),
-                            ),
-                            SizedBox(height: 2),
-                            Container(
-                              padding: EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 6),
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: getStatusColors(activeAccount.status),
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                ),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: getStatusBorderColor(
-                                      activeAccount.status),
-                                  width: 1,
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: getStatusShadowColor(
-                                        activeAccount.status),
-                                    blurRadius: 4,
-                                    offset: Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Container(
-                                    width: 6,
-                                    height: 6,
-                                    decoration: BoxDecoration(
-                                      color: getStatusIndicatorColor(
-                                          activeAccount.status),
-                                      shape: BoxShape.circle,
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: getStatusIndicatorColor(
-                                                  activeAccount.status)
-                                              .withOpacity(0.3),
-                                          blurRadius: 2,
-                                          spreadRadius: 1,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  SizedBox(width: 6),
-                                  Text(
-                                    getStatusText(activeAccount.status),
-                                    style: TextStyle(
-                                      color: getStatusTextColor(
-                                          activeAccount.status),
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                      letterSpacing: 0.3,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            )
 
-                            // Container(
-                            //   padding: EdgeInsets.symmetric(
-                            //       horizontal: 6, vertical: 2),
-                            //   decoration: BoxDecoration(
-                            //     color: Color.fromARGB(201, 255, 255, 255),
-                            //     borderRadius: BorderRadius.circular(8),
-                            //     border: Border.all(
-                            //       color: Colors.white.withOpacity(0.2),
-                            //       width: 0.5,
-                            //     ),
-                            //   ),
-                            //   child: Text(
-                            //     activeAccount.status == CustomerStatus.pending
-                            //         ? "Pending"
-                            //         : SchemeUserModel.statusToString(
-                            //                 activeAccount.status)
-                            //             .toString(),
-                            //     style: TextStyle(
-                            //         color:
-                            //             const Color.fromARGB(179, 44, 43, 43),
-                            //         fontSize: 12),
-                            //   ),
-                            // )
-
-                            //   Text(
-                            //     account.schemeType!.toUpperCase(),
-                            //     style: TextStyle(
-                            //       color: Colors.black,
-                            //       fontSize: 9,
-                            //       fontWeight: FontWeight.w700,
-                            //       letterSpacing: 0.5,
-                            //     ),
-                            //   ),
-                            // ),
-                          ],
-                        )),
                     if (activeAccount.name == "") SizedBox(height: 12),
                     if (activeAccount.name == "")
                       GestureDetector(
@@ -268,9 +240,7 @@ class _LeftPanelState extends State<LeftPanel> {
                           showDialog(
                               context: context,
                               barrierDismissible: false,
-                              builder: (context) =>
-                                  // UserRegistrationDialog(),
-                                  UserRegistrationDialog(
+                              builder: (context) => UserRegistrationDialog(
                                     type: "update",
                                     user: widget.user,
                                   ));

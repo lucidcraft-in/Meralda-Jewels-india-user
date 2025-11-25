@@ -332,19 +332,19 @@ class OTPProvider with ChangeNotifier {
           headers: {
             "Content-Type": "application/json",
             "Authorization":
-                "Bearer 84922|M2MzDHqeLKnr2H0DTnC8EeCKNCbXUZ7w6ims64rk",
+                "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL3NlcnZlcjItd2MubGlicm9taS5jbG91ZCIsImF1ZCI6Imh0dHBzOi8vc2VydmVyMi13Yy5saWJyb21pLmNsb3VkIiwiaWF0IjoxNzYyMTczNDk1LCJleHAiOjIwNzc3MDYyOTUsInVzZXJfaWQiOjIzNjMsImNvbXBhbnlfaWQiOjE5MjAsInRva2VuX2lkIjo5NzgxMywiYWJpbGl0aWVzIjpbIioiXSwidHlwZSI6ImFjY2Vzc190b2tlbiJ9.ObuHRW8V3FOqMPvAN6jv3vwygfyZKhea37i6pyRDVJY",
           },
           body: jsonEncode({
-            "to": "91${mobile}", // e.g. "918590836052"
+            "to": "91$mobile", // e.g., "918590836052"
             "type": "template",
             "template": {
-              "name": "otp_test",
+              "name": "otp_send",
               "language": {"code": "en"},
               "components": [
                 {
                   "type": "body",
                   "parameters": [
-                    {"type": "text", "text": otp} // OTP value
+                    {"type": "text", "text": otp}
                   ]
                 },
                 {
@@ -352,7 +352,7 @@ class OTPProvider with ChangeNotifier {
                   "sub_type": "url",
                   "index": "0",
                   "parameters": [
-                    {"type": "text", "text": otp} // OTP value
+                    {"type": "text", "text": otp}
                   ]
                 }
               ]

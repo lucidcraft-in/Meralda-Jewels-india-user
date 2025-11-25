@@ -534,17 +534,17 @@
 //     db.initiliase();
 //     db.addTransaction(data).then((value) {
 //       openCheckout(data["TransactionId"]);
-//       // // print("----payment data ----");
-//       // setState(() {
-//       //   transactionId = value.toUpperCase();
-//       // });
-//       // // print("----- Firebase insert ----------");
-//       // // print(transactionId);
-//       // if (transactionId != "") {
-//       //   insertAPI(data.amount, data.note, transactionId);
-//       // } else {
-//       //   // print("----- Firebase insert error----------");
-//       // }
+//       // print("----payment data ----");
+//       setState(() {
+//         transactionId = value.toUpperCase();
+//       });
+//       // print("----- Firebase insert ----------");
+//       // print(transactionId);
+//       if (transactionId != "") {
+//         insertAPI(data.amount, data.note, transactionId);
+//       } else {
+//         // print("----- Firebase insert error----------");
+//       }
 //     });
 //   }
 

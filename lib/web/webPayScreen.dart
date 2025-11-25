@@ -5,6 +5,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:meralda_gold_user/model/customerModel.dart';
 import 'package:meralda_gold_user/web/helperWidget.dart/rightProfile.dart';
+import 'package:meralda_gold_user/web/newHomeScreen/newwebhome.dart';
 import 'package:meralda_gold_user/web/webHome.dart';
 import 'package:meralda_gold_user/web/webProfile.dart';
 import 'package:meralda_gold_user/web/widgets/noSchemeWidget.dart';
@@ -142,7 +143,7 @@ class _WebPayAmountScreenState extends State<WebPayAmountScreen>
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => WebHomeScreen(),
+                              builder: (context) => Newwebhome(),
                             ),
                           );
                         } else {
@@ -280,12 +281,20 @@ class _WebPayAmountScreenState extends State<WebPayAmountScreen>
                             // Close loading dialog
                             Navigator.of(context).pop();
 
+                            // Navigator.pushAndRemoveUntil(
+                            //   context,
+                            //   MaterialPageRoute(
+                            //       builder: (context) => WebHomeScreen()),
+                            //   (route) => false,
+                            // );
+
                             Navigator.pushAndRemoveUntil(
                               context,
                               MaterialPageRoute(
-                                  builder: (context) => WebHomeScreen()),
+                                  builder: (context) => Newwebhome()),
                               (route) => false,
                             );
+
                             // Show success message
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
@@ -352,7 +361,7 @@ class _WebPayAmountScreenState extends State<WebPayAmountScreen>
                               0.6, // Adjust as needed
                           child: activeAccount != null
                               ? RightPanalProfile(user: activeAccount!)
-                              : noSchemeSec(),
+                              : noSchemeSec(widget.user!),
                         ),
                       ],
                     ),
@@ -378,7 +387,7 @@ class _WebPayAmountScreenState extends State<WebPayAmountScreen>
                           flex: 3,
                           child: activeAccount != null
                               ? RightPanalProfile(user: activeAccount!)
-                              : noSchemeSec(),
+                              : noSchemeSec(widget.user!),
                         ),
                       ],
                     ),

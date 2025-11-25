@@ -14,6 +14,7 @@ import '../model/branchModel.dart';
 import '../model/customerModel.dart';
 import '../providers/account_provider.dart';
 import '../providers/branchProvider.dart';
+import 'helperWidget.dart/documentsDialog.dart';
 import 'helperWidget.dart/errorDialog.dart';
 import 'webPayScreen.dart';
 
@@ -58,7 +59,10 @@ class _UserRegistrationDialogState extends State<UserRegistrationDialog> {
 
   // Dropdown values
   String? selectedSchemeType;
-  final List<String> schemeTypeList = ["Wishlist", "Aspire"];
+  final List<String> schemeTypeList = [
+    "Wishlist - Bonus Scheme",
+    "Aspire - Metal Scheme"
+  ];
   String? selectedOdType;
   final List<String> orderAdvList = ["Gold", "Cash"];
 
@@ -68,8 +72,9 @@ class _UserRegistrationDialogState extends State<UserRegistrationDialog> {
   final List<String> branchList = ["Branch A", "Branch B", "Branch C"];
   final List<String> countryList = [
     "India",
-    "UAE",
   ];
+
+  bool _acceptTnc = false;
 
   // Date fields
   DateTime? selectedDate;
@@ -300,6 +305,7 @@ class _UserRegistrationDialogState extends State<UserRegistrationDialog> {
   //   );
   // }
 
+  String? selectedSchemeDisplay;
   Widget _buildWebForm() {
     // Determine if we're in "new account" mode (activeAccount is null)
     final bool isNewAccount = activeAccount == null;
@@ -311,14 +317,32 @@ class _UserRegistrationDialogState extends State<UserRegistrationDialog> {
           child: Column(
             children: [
               // Scheme Type (always shown)
+              // _buildDropdown(
+              //   label: "Scheme Type",
+              //   value: selectedSchemeType,
+              //   items: schemeTypeList,
+              //   onChanged: (val) => setState(() {
+              //     selectedSchemeType = val;
+              //     _generateCustomerId(val == "Wishlist" ? "WL" : "ASP");
+              //   }),
+              // ),
               _buildDropdown(
                 label: "Scheme Type",
-                value: selectedSchemeType,
+                value: selectedSchemeDisplay,
                 items: schemeTypeList,
-                onChanged: (val) => setState(() {
-                  selectedSchemeType = val;
-                  _generateCustomerId(val == "Wishlist" ? "WL" : "ASP");
-                }),
+                onChanged: (val) {
+                  setState(() {
+                    selectedSchemeDisplay = val;
+
+                    if (val == "Wishlist - Bonus Scheme") {
+                      selectedSchemeType = "Wishlist";
+                      // _generateCustomerId("WL");
+                    } else if (val == "Aspire - Metal Scheme") {
+                      selectedSchemeType = "Aspire";
+                      // _generateCustomerId("ASP");
+                    }
+                  });
+                },
               ),
               const SizedBox(height: 16),
 
@@ -343,12 +367,12 @@ class _UserRegistrationDialogState extends State<UserRegistrationDialog> {
               ],
 
               // Customer ID (only for new accounts)
-              if (isNewAccount) ...[
-                _buildTextField(
-                    "Customer ID", Icons.badge_outlined, _custIdController,
-                    isReadOnly: true),
-                const SizedBox(height: 16),
-              ],
+              // if (isNewAccount) ...[
+              //   _buildTextField(
+              //       "Customer ID", Icons.badge_outlined, _custIdController,
+              //       isReadOnly: true),
+              //   const SizedBox(height: 16),
+              // ],
 
               // Phone Number (only for new accounts)
               if (isNewAccount) ...[
@@ -367,10 +391,63 @@ class _UserRegistrationDialogState extends State<UserRegistrationDialog> {
                 const SizedBox(height: 16),
               ],
 
+              if (selectedSchemeType == "Aspire") ...[
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      ...[2000, 3000, 4000, 5000].map((amount) {
+                        return ChoiceChip(
+                          label: Text("₹$amount"),
+                          selected: openingAmtCntrl.text == amount.toString(),
+                          onSelected: (selected) {
+                            if (selected) {
+                              setState(() {
+                                openingAmtCntrl.text = amount.toString();
+                              });
+                            }
+                          },
+                        );
+                      }).toList(),
+                      // 👇 Custom amount input
+                      SizedBox(
+                        width: 120,
+                        child: TextField(
+                          controller: openingAmtCntrl,
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(
+                            hintText: "Custom",
+                            prefixText: "₹ ",
+                            contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 6),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                          ),
+                          onChanged: (val) {
+                            setState(() {
+                              // clear chip selection when custom amount typed
+                            });
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+              ],
+
               // Scheme Amount (always shown)
               _buildTextField(
-                  "Scheme Amount", Icons.attach_money, openingAmtCntrl,
-                  isRequired: true),
+                "Scheme Amount",
+                Icons.attach_money,
+                openingAmtCntrl,
+                isRequired: true,
+                isReadOnly: selectedSchemeType == "Aspire",
+              ),
               const SizedBox(height: 8),
               Align(
                 alignment: Alignment.centerLeft,
@@ -458,15 +535,73 @@ class _UserRegistrationDialogState extends State<UserRegistrationDialog> {
                     _nomineePhoneController,
                     keyboardType: TextInputType.phone),
                 const SizedBox(height: 16),
-                _buildTextField("Nominee Relation", Icons.group_outlined,
-                    _nomineeRelationController),
+                // _buildTextField("Nominee Relation", Icons.group_outlined,
+                //     _nomineeRelationController),
+                _buildDropdown(
+                  label: "Nominee Relation",
+                  value: _getSafeNomineeRelationValue(),
+                  items: const [
+                    'Father',
+                    'Mother',
+                    'Brother',
+                    'Sister',
+                    'Husband',
+                    'Wife',
+                    'Son',
+                    'Daughter',
+                    'Other',
+                  ],
+                  onChanged: (val) {
+                    setState(() {
+                      _nomineeRelationController.text = val ?? '';
+                    });
+                  },
+                ),
                 const SizedBox(height: 16),
               ],
+              Row(
+                children: [
+                  Checkbox(
+                    value: _acceptTnc,
+                    onChanged: (value) {
+                      setState(() => _acceptTnc = value ?? false);
+                    },
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      showTermsAndConditionsDialog(context);
+                    },
+                    child: Text(
+                      'Accept our Terms and Condition',
+                      style: TextStyle(
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
         ),
       ],
     );
+  }
+
+  String? _getSafeNomineeRelationValue() {
+    const validRelations = [
+      'Father',
+      'Mother',
+      'Brother',
+      'Sister',
+      'Husband',
+      'Wife',
+      'Son',
+      'Daughter',
+      'Other',
+    ];
+
+    final current = _nomineeRelationController.text.trim();
+    return validRelations.contains(current) ? current : null;
   }
 
   Widget _buildKYCSection() {
@@ -713,116 +848,347 @@ class _UserRegistrationDialogState extends State<UserRegistrationDialog> {
     );
   }
 
+  // Widget _buildMobileForm() {
+  //   return Column(
+  //     children: [
+  //       // Scheme Type
+  //       _buildDropdown(
+  //         label: "Scheme Type",
+  //         value: selectedSchemeType,
+  //         items: schemeTypeList,
+  //         onChanged: (val) => setState(() {
+  //           selectedSchemeType = val;
+  //           _generateCustomerId(val == "Wishlist" ? "WL" : "ASP");
+  //         }),
+  //       ),
+  //       const SizedBox(height: 16),
+  //       _buildCountryDropdown(),
+  //       // Expanded(
+  //       //   child: _buildDropdown(
+  //       //     label: "Country",
+  //       //     value: selectedCountry,
+  //       //     items: countryList,
+  //       //     onChanged: (val) => setState(() => selectedCountry = val),
+  //       //   ),
+  //       // ),
+  //       const SizedBox(height: 16),
+  //       _buildBranchDropdown(),
+  //       const SizedBox(height: 16),
+
+  //       // Customer Name
+  //       _buildTextField("Customer Name", Icons.person_outline, _nameController,
+  //           isRequired: true),
+  //       const SizedBox(height: 16),
+
+  //       // Customer ID
+  //       _buildTextField("Customer ID", Icons.perm_identity, _custIdController,
+  //           isReadOnly: true),
+  //       // const SizedBox(height: 16),
+
+  //       // // Order Advance Type
+  //       // _buildDropdown(
+  //       //   label: "Order Advance",
+  //       //   value: selectedOdType,
+  //       //   items: orderAdvList,
+  //       //   onChanged: (val) => setState(() => selectedOdType = val),
+  //       // ),
+  //       const SizedBox(height: 16),
+
+  //       // Phone Number
+  //       _buildTextField(
+  //         "Phone Number",
+  //         Icons.phone_outlined,
+  //         _phoneController,
+  //         isRequired: true,
+  //         keyboardType: TextInputType.phone,
+  //         validator: (value) {
+  //           if (value == null || value.isEmpty) return 'Required';
+  //           if (value.length != 10) return 'Invalid phone number';
+  //           return null;
+  //         },
+  //       ),
+  //       const SizedBox(height: 16),
+
+  //       // Address
+  //       _buildTextField(
+  //         "Address",
+  //         Icons.home_outlined,
+  //         _addressController,
+  //         isRequired: true,
+  //         maxLines: 3,
+  //       ),
+  //       const SizedBox(height: 16),
+
+  //       // Country and Branch selection
+  //       Row(
+  //         children: [
+  //           Expanded(
+  //             child: _buildDropdown(
+  //               label: "Country",
+  //               value: selectedCountry,
+  //               items: countryList,
+  //               onChanged: (val) => setState(() => selectedCountry = val),
+  //             ),
+  //           ),
+  //           const SizedBox(width: 16),
+  //           Expanded(
+  //             child: _buildDropdown(
+  //               label: "Branch",
+  //               value: selectedBranch,
+  //               items: branchList,
+  //               onChanged: (val) => setState(() => selectedBranch = val),
+  //             ),
+  //           ),
+  //         ],
+  //       ),
+  //       const SizedBox(height: 16),
+
+  //       // Additional fields checkbox
+  //       Row(
+  //         children: [
+  //           Checkbox(
+  //             value: _showAdditionalFields,
+  //             onChanged: (value) =>
+  //                 setState(() => _showAdditionalFields = value ?? false),
+  //           ),
+  //           Text('Show Additional Fields'),
+  //         ],
+  //       ),
+  //       const SizedBox(height: 10),
+
+  //       // Additional fields (conditionally shown)
+  //       if (_showAdditionalFields) ...[
+  //         _buildTextField("Email", Icons.email_outlined, _emailController),
+  //         const SizedBox(height: 16),
+  //         _buildTextField(
+  //             "Place", Icons.location_on_outlined, _placeController),
+  //         const SizedBox(height: 16),
+  //         _buildDateField("Date of Birth"),
+  //         const SizedBox(height: 16),
+  //         _buildTextField("Nominee", Icons.person_outline, _nomineeController),
+  //         const SizedBox(height: 16),
+  //         _buildTextField(
+  //             "Nominee Phone", Icons.phone_outlined, _nomineePhoneController,
+  //             keyboardType: TextInputType.phone),
+  //         const SizedBox(height: 16),
+  //         _buildTextField("Nominee Relation", Icons.group_outlined,
+  //             _nomineeRelationController),
+  //         const SizedBox(height: 16),
+  //         _buildTextField("Aadhar Card", Icons.numbers, _aadharController),
+  //         const SizedBox(height: 16),
+  //         _buildTextField("PAN Card", Icons.numbers, _panController),
+  //         const SizedBox(height: 16),
+  //         _buildTextField("PIN Code", Icons.code, _pinCodeController,
+  //             keyboardType: TextInputType.number),
+  //         const SizedBox(height: 16),
+  //       ],
+  //     ],
+  //   );
+  // }
   Widget _buildMobileForm() {
+    final bool isNewAccount = activeAccount == null;
+
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Scheme Type
         _buildDropdown(
           label: "Scheme Type",
-          value: selectedSchemeType,
+          value: selectedSchemeDisplay,
           items: schemeTypeList,
-          onChanged: (val) => setState(() {
-            selectedSchemeType = val;
-            _generateCustomerId(val == "Wishlist" ? "WL" : "ASP");
-          }),
-        ),
-        const SizedBox(height: 16),
-        _buildCountryDropdown(),
-        // Expanded(
-        //   child: _buildDropdown(
-        //     label: "Country",
-        //     value: selectedCountry,
-        //     items: countryList,
-        //     onChanged: (val) => setState(() => selectedCountry = val),
-        //   ),
-        // ),
-        const SizedBox(height: 16),
-        _buildBranchDropdown(),
-        const SizedBox(height: 16),
+          onChanged: (val) {
+            setState(() {
+              selectedSchemeDisplay = val;
 
-        // Customer Name
-        _buildTextField("Customer Name", Icons.person_outline, _nameController,
-            isRequired: true),
-        const SizedBox(height: 16),
-
-        // Customer ID
-        _buildTextField("Customer ID", Icons.perm_identity, _custIdController,
-            isReadOnly: true),
-        // const SizedBox(height: 16),
-
-        // // Order Advance Type
-        // _buildDropdown(
-        //   label: "Order Advance",
-        //   value: selectedOdType,
-        //   items: orderAdvList,
-        //   onChanged: (val) => setState(() => selectedOdType = val),
-        // ),
-        const SizedBox(height: 16),
-
-        // Phone Number
-        _buildTextField(
-          "Phone Number",
-          Icons.phone_outlined,
-          _phoneController,
-          isRequired: true,
-          keyboardType: TextInputType.phone,
-          validator: (value) {
-            if (value == null || value.isEmpty) return 'Required';
-            if (value.length != 10) return 'Invalid phone number';
-            return null;
+              if (val == "Wishlist - Bonus Scheme") {
+                selectedSchemeType = "Wishlist";
+                // _generateCustomerId("WL");
+              } else if (val == "Aspire - Metal Scheme") {
+                selectedSchemeType = "Aspire";
+                // _generateCustomerId("ASP");
+              }
+            });
           },
         ),
         const SizedBox(height: 16),
 
-        // Address
+        // Country and Branch
+        _buildCountryDropdown(),
+        const SizedBox(height: 16),
+        _buildBranchDropdown(),
+        const SizedBox(height: 16),
+
+        // Customer Name (only for new accounts)
+        if (isNewAccount) ...[
+          _buildTextField(
+            "Customer Name",
+            Icons.person_outline,
+            _nameController,
+            isRequired: true,
+          ),
+          const SizedBox(height: 16),
+        ],
+
+        // Customer ID (only for new accounts)
+        // if (isNewAccount) ...[
+        //   _buildTextField(
+        //     "Customer ID",
+        //     Icons.badge_outlined,
+        //     _custIdController,
+        //     isReadOnly: true,
+        //   ),
+        //   const SizedBox(height: 16),
+        // ],
+
+        // Phone Number (only for new accounts)
+        if (isNewAccount) ...[
+          _buildTextField(
+            "Phone Number",
+            Icons.phone_outlined,
+            _phoneController,
+            isRequired: true,
+            keyboardType: TextInputType.phone,
+            validator: (value) {
+              if (value == null || value.isEmpty) return 'Required';
+              if (value.length != 10) return 'Invalid phone number';
+              return null;
+            },
+          ),
+          const SizedBox(height: 16),
+        ],
+
+        // Aspire Scheme Quick Amount Chips
+        if (selectedSchemeType == "Aspire") ...[
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                ...[2000, 3000, 4000, 5000].map((amount) {
+                  return ChoiceChip(
+                    label: Text("₹$amount"),
+                    selected: openingAmtCntrl.text == amount.toString(),
+                    onSelected: (selected) {
+                      if (selected) {
+                        setState(() {
+                          openingAmtCntrl.text = amount.toString();
+                        });
+                      }
+                    },
+                  );
+                }).toList(),
+                // 👇 Custom amount input
+                SizedBox(
+                  width: 120,
+                  child: TextField(
+                    controller: openingAmtCntrl,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      hintText: "Custom",
+                      prefixText: "₹ ",
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 6),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                    ),
+                    onChanged: (val) {
+                      setState(() {
+                        // clear chip selection when custom amount typed
+                      });
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+        ],
+
+        // Scheme Amount
         _buildTextField(
-          "Address",
-          Icons.home_outlined,
-          _addressController,
+          "Scheme Amount",
+          Icons.attach_money,
+          openingAmtCntrl,
           isRequired: true,
-          maxLines: 3,
+          isReadOnly: selectedSchemeType == "Aspire",
+        ),
+        const SizedBox(height: 8),
+
+        Align(
+          alignment: Alignment.centerLeft,
+          child: Container(
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.orange.shade50,
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: Colors.orange.shade200),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.info_outline,
+                    size: 14, color: Colors.orange.shade600),
+                const SizedBox(width: 4),
+                Text(
+                  "Minimum ₹2000",
+                  style: TextStyle(color: Colors.orange.shade700, fontSize: 12),
+                ),
+              ],
+            ),
+          ),
         ),
         const SizedBox(height: 16),
 
-        // Country and Branch selection
-        Row(
-          children: [
-            Expanded(
-              child: _buildDropdown(
-                label: "Country",
-                value: selectedCountry,
-                items: countryList,
-                onChanged: (val) => setState(() => selectedCountry = val),
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: _buildDropdown(
-                label: "Branch",
-                value: selectedBranch,
-                items: branchList,
-                onChanged: (val) => setState(() => selectedBranch = val),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
+        // Address (only for new accounts)
+        if (isNewAccount) ...[
+          _buildTextField(
+            "Address",
+            Icons.home_outlined,
+            _addressController,
+            isRequired: true,
+            maxLines: 3,
+          ),
+          const SizedBox(height: 16),
+        ],
 
-        // Additional fields checkbox
-        Row(
-          children: [
-            Checkbox(
-              value: _showAdditionalFields,
-              onChanged: (value) =>
-                  setState(() => _showAdditionalFields = value ?? false),
-            ),
-            Text('Show Additional Fields'),
-          ],
-        ),
-        const SizedBox(height: 10),
+        // Pin Code (only for new accounts)
+        if (isNewAccount) ...[
+          _buildTextField(
+            "Pin Code",
+            Icons.pin_drop,
+            _pinCodeController,
+            isRequired: true,
+            keyboardType: TextInputType.number,
+          ),
+          const SizedBox(height: 16),
+        ],
 
-        // Additional fields (conditionally shown)
-        if (_showAdditionalFields) ...[
+        // KYC (only for new accounts)
+        if (isNewAccount) ...[
+          _buildKYCSection(),
+          const SizedBox(height: 20),
+        ],
+
+        // Additional Fields Checkbox (only for new accounts)
+        if (isNewAccount) ...[
+          Row(
+            children: [
+              Checkbox(
+                value: _showAdditionalFields,
+                onChanged: (value) =>
+                    setState(() => _showAdditionalFields = value ?? false),
+              ),
+              const Text('Show Additional Fields'),
+            ],
+          ),
+          const SizedBox(height: 10),
+        ],
+
+        // Additional Fields (only for new accounts)
+        if (isNewAccount && _showAdditionalFields) ...[
           _buildTextField("Email", Icons.email_outlined, _emailController),
           const SizedBox(height: 16),
           _buildTextField(
@@ -830,23 +1196,59 @@ class _UserRegistrationDialogState extends State<UserRegistrationDialog> {
           const SizedBox(height: 16),
           _buildDateField("Date of Birth"),
           const SizedBox(height: 16),
-          _buildTextField("Nominee", Icons.person_outline, _nomineeController),
+          _buildTextField("Nominee", Icons.person_outlined, _nomineeController),
           const SizedBox(height: 16),
           _buildTextField(
               "Nominee Phone", Icons.phone_outlined, _nomineePhoneController,
               keyboardType: TextInputType.phone),
           const SizedBox(height: 16),
-          _buildTextField("Nominee Relation", Icons.group_outlined,
-              _nomineeRelationController),
-          const SizedBox(height: 16),
-          _buildTextField("Aadhar Card", Icons.numbers, _aadharController),
-          const SizedBox(height: 16),
-          _buildTextField("PAN Card", Icons.numbers, _panController),
-          const SizedBox(height: 16),
-          _buildTextField("PIN Code", Icons.code, _pinCodeController,
-              keyboardType: TextInputType.number),
+
+          // Nominee Relation Dropdown
+          _buildDropdown(
+            label: "Nominee Relation",
+            value: _getSafeNomineeRelationValue(),
+            items: const [
+              'Father',
+              'Mother',
+              'Brother',
+              'Sister',
+              'Husband',
+              'Wife',
+              'Son',
+              'Daughter',
+              'Other',
+            ],
+            onChanged: (val) {
+              setState(() {
+                _nomineeRelationController.text = val ?? '';
+              });
+            },
+          ),
           const SizedBox(height: 16),
         ],
+
+        // Terms and Conditions
+        Row(
+          children: [
+            Checkbox(
+              value: _acceptTnc,
+              onChanged: (value) {
+                setState(() => _acceptTnc = value ?? false);
+              },
+            ),
+            GestureDetector(
+              onTap: () {
+                showTermsAndConditionsDialog(context);
+              },
+              child: const Text(
+                'Accept our Terms and Condition',
+                style: TextStyle(
+                  decoration: TextDecoration.underline,
+                ),
+              ),
+            ),
+          ],
+        ),
       ],
     );
   }
@@ -1082,6 +1484,12 @@ class _UserRegistrationDialogState extends State<UserRegistrationDialog> {
       return;
     }
 
+    if (!_acceptTnc) {
+      showErrorDialog(
+          'Accept Tnc', 'Please accept Terms And Condition', context);
+      return;
+    }
+
     // For new accounts, validate KYC documents
     final bool isNewAccount = activeAccount == null;
     if (isNewAccount) {
@@ -1110,19 +1518,19 @@ class _UserRegistrationDialogState extends State<UserRegistrationDialog> {
         aadharFrontUrl = await _uploadImage(
           file: _aadharFrontImage,
           bytes: _aadharFrontImageBytes,
-          path: '${_custIdController.text}_aadhar_front.jpg',
+          path: '${_nameController.text}_aadhar_front.jpg',
         );
 
         aadharBackUrl = await _uploadImage(
           file: _aadharBackImage,
           bytes: _aadharBackImageBytes,
-          path: '${_custIdController.text}_aadhar_back.jpg',
+          path: '${_nameController.text}_aadhar_back.jpg',
         );
 
         panCardUrl = await _uploadImage(
           file: _panCardImage,
           bytes: _panCardImageBytes,
-          path: '${_custIdController.text}_pan_card.jpg',
+          path: '${_nameController.text}_pan_card.jpg',
         );
 
         // Check if image uploads were successful

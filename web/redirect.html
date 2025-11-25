@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Payment Status</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        text-align: center;
+        margin-top: 20%;
+      }
+      .success {
+        color: green;
+      }
+      .failed {
+        color: red;
+      }
+      .unknown {
+        color: orange;
+      }
+    </style>
+  </head>
+  <body>
+    <h2 id="status">Processing Payment...</h2>
+
+    <script>
+      console.log("🟢 Payment redirect page loaded.");
+
+      // ✅ Step 1: Extract query params (status, transactionId)
+      const urlParams = new URLSearchParams(window.location.search);
+      const status = urlParams.get("status") || "unknown";
+      const txnId = urlParams.get("transactionId") || "";
+
+      console.log("🔍 Extracted Params:");
+      console.log("  ➤ status:", status);
+      console.log("  ➤ transactionId:", txnId);
+
+      // ✅ Step 2: Show result message
+      const statusEl = document.getElementById("status");
+      if (status === "success") {
+        statusEl.innerHTML = "✅ Payment Successful!";
+        statusEl.className = "success";
+        console.log("✅ Payment marked as SUCCESS");
+      } else if (status === "failed") {
+        statusEl.innerHTML = "❌ Payment Failed!";
+        statusEl.className = "failed";
+        console.log("❌ Payment marked as FAILED");
+      } else {
+        statusEl.innerHTML = "⚠️ Payment status unknown.";
+        statusEl.className = "unknown";
+        console.warn("⚠️ Unknown payment status");
+      }
+
+      // ✅ Step 3: Redirect back to Flutter web app after delay
+      const redirectUrl = `/?status=${status}&txnId=${txnId}`;
+      console.log(`⏳ Redirecting back to Flutter web in 3 seconds: ${redirectUrl}`);
+
+      setTimeout(() => {
+        console.log("🚀 Redirecting now...");
+        window.location.href = redirectUrl;
+      }, 3000);
+    </script>
+  </body>
+</html>

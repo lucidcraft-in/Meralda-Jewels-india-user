@@ -1,26 +1,26 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:meralda_gold_user/model/customerModel.dart';
 import 'package:meralda_gold_user/web/widgets/noSchemeWidget.dart';
-import 'package:phonepe_payment_sdk/phonepe_payment_sdk.dart';
 import 'package:provider/provider.dart';
 import 'package:quickalert/quickalert.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-
 import '../../common/colo_extension.dart';
 import '../../functions/SHA256.dart';
 import '../../functions/base64.dart';
 import '../../providers/account_provider.dart';
 import '../../providers/goldrate.dart';
-
 import '../../providers/phonePe_payment.dart';
 import '../../providers/transaction.dart';
 import '../../providers/user.dart';
 import '../../screens/paymentResponseScreen.dart';
+import '../apiService/paymentService.dart';
 import '../apiService/phonepeAuth.dart';
+import '../payment/paymentStatusScreen.dart';
 import '../webPayScreen.dart';
+import 'viewTransaction.dart';
 
 class RightPanalProfile extends StatefulWidget {
   RightPanalProfile({super.key, required this.user});
@@ -136,7 +136,7 @@ class _rightPanalProfileState extends State<RightPanalProfile>
     db = TransactionProvider();
     dbUser = User();
     db!.initiliase();
-
+    print(activeAccount.id);
     final value = await db!.read(activeAccount.id!);
 
     if (value == null || value.isEmpty) {
@@ -156,6 +156,7 @@ class _rightPanalProfileState extends State<RightPanalProfile>
   @override
   void dispose() {
     _animationController.dispose();
+    _txnSub?.cancel();
     super.dispose();
   }
 
@@ -390,8 +391,9 @@ class _rightPanalProfileState extends State<RightPanalProfile>
       return Container();
     }
     if (widget.user == null) {
-      return noSchemeSec();
+      return noSchemeSec(widget.user);
     }
+    print(accountProvider.currentAccount!.schemeType);
     return Container(
       padding: EdgeInsets.all(24),
       child: Column(
@@ -429,25 +431,39 @@ class _rightPanalProfileState extends State<RightPanalProfile>
               GestureDetector(
                 onTap: () async {
                   final txns = await getTransaction(activeAccount);
+                  print(txns);
                   if (txns.isNotEmpty) {
-                    _showHistoryDialog(context, activeAccount, txns);
+                    showHistoryDialog(context, activeAccount, txns);
                   } else {
-                    // optional: show snackbar or empty state
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text("No transactions found")),
                     );
                   }
                 },
                 child: Container(
-                  padding: EdgeInsets.all(12),
+                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
                     color: TColo.primaryColor1.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(
-                    Icons.history,
-                    color: TColo.primaryColor1,
-                    size: 24,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.receipt_long,
+                        color: TColo.primaryColor1,
+                        size: 18,
+                      ),
+                      SizedBox(width: 6),
+                      Text(
+                        'History',
+                        style: TextStyle(
+                          color: TColo.primaryColor1,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -515,10 +531,75 @@ class _rightPanalProfileState extends State<RightPanalProfile>
                         ),
 
                         SizedBox(height: 24),
+                        if (accountProvider.currentAccount!.balance == 0 &&
+                            accountProvider.currentAccount!.schemeType ==
+                                "Aspire") ...[
+                          const SizedBox(height: 8),
+                          StatefulBuilder(
+                            builder: (context, setInnerState) {
+                              return Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                crossAxisAlignment: WrapCrossAlignment.center,
+                                children: [
+                                  ...[2000, 3000, 4000, 5000].map((amount) {
+                                    return ChoiceChip(
+                                      label: Text("₹ $amount"),
+                                      selected:
+                                          amountCntrl.text == amount.toString(),
+                                      onSelected: (selected) {
+                                        if (selected) {
+                                          setInnerState(() {
+                                            amountCntrl.text =
+                                                amount.toString();
+                                          });
+                                        }
+                                      },
+                                    );
+                                  }).toList(),
+                                  // 👇 Custom amount input styled next to chips
+                                  SizedBox(
+                                    width: 120,
+                                    child: TextField(
+                                      controller: amountCntrl,
+                                      keyboardType: TextInputType.number,
+                                      decoration: InputDecoration(
+                                        hintText: "Custom",
+                                        prefixText: "₹ ",
+                                        contentPadding:
+                                            const EdgeInsets.symmetric(
+                                                horizontal: 8, vertical: 6),
+                                        border: OutlineInputBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(20),
+                                        ),
+                                      ),
+                                      onChanged: (val) {
+                                        setInnerState(() {
+                                          // Deselect chips when user types a custom amount
+                                          if (!["2000", "3000", "4000", "5000"]
+                                              .contains(val)) {
+                                            // Just triggers rebuild — chips automatically deselect
+                                          }
+                                        });
+                                      },
+                                    ),
+                                  ),
+                                ],
+                              );
+                            },
+                          ),
+                        ],
 
+                        SizedBox(height: 24),
                         TextFormField(
                           controller: amountCntrl,
-                          readOnly: activeAccount.balance > 0 ? true : false,
+                          readOnly: activeAccount.balance > 0
+                              ? true
+                              : accountProvider.currentAccount!.schemeType ==
+                                      "Aspire"
+                                  ? true
+                                  : false,
                           // ..text = accountProvider
                           //     .currentAccount!.openingAmount
                           //     .toString(),
@@ -650,15 +731,37 @@ class _rightPanalProfileState extends State<RightPanalProfile>
                           child: Material(
                             color: Colors.transparent,
                             child: InkWell(
-                              onTap: () {
-                                _isLoading
-                                    ? null
-                                    :
-                                    // : tokenGenarate(
-                                    //     amountCntrl.text,
-                                    //     descriptionController.text,
-                                    //     activeAccount);
-                                    _saveForm(activeAccount);
+                              // onTap: () async {
+                              // _isLoading
+                              //     ? null
+
+                              //     : _saveForm(activeAccount);
+                              // },
+
+                              onTap: () async {
+                                // if (_isLoading) return; // Prevent double taps
+
+                                // setState(() {
+                                //   _isLoading = true;
+                                // });
+
+                                // try {
+                                //   await _saveForm(activeAccount);
+                                // } finally {
+                                //   setState(() => _isLoading = false);
+                                // }
+                                if (_isLoading) return;
+                                setState(() => _isLoading = true);
+
+                                try {
+                                  await _saveForm(activeAccount);
+                                } catch (e) {
+                                  _showRightSnackBar(
+                                      context, 'Error: $e', Colors.red);
+                                } finally {
+                                  // Keep the loader until you really want to hide it
+                                  // setState(() => _isLoading = false);
+                                }
                               },
                               borderRadius: BorderRadius.circular(16),
                               child: Container(
@@ -916,6 +1019,7 @@ class _rightPanalProfileState extends State<RightPanalProfile>
   }
 
   Future<void> _saveForm(SchemeUserModel activeAc) async {
+    // setState(() => _isLoading = true);
     // Auto-generate invoice number
     String invoiceNo = "ONLN${DateTime.now().millisecondsSinceEpoch}";
 
@@ -939,16 +1043,19 @@ class _rightPanalProfileState extends State<RightPanalProfile>
     );
 
     if (activeAc.status == CustomerStatus.pending) {
+      setState(() => _isLoading = false);
       _showRightSnackBar(context, 'Please wait for verification', Colors.red);
       return;
     }
 
     if (activeAc.status == CustomerStatus.rejected) {
+      setState(() => _isLoading = false);
       _showRightSnackBar(context, 'Your account has been rejected', Colors.red);
       return;
     }
 
     if (!_formKey.currentState!.validate()) {
+      setState(() => _isLoading = false);
       _showRightSnackBar(
           context, 'Please fill all required fields correctly!', Colors.red);
       return;
@@ -958,35 +1065,19 @@ class _rightPanalProfileState extends State<RightPanalProfile>
 
     if (activeAc.schemeType != "Wishlist" &&
         double.parse(amountCntrl.text) < 2000) {
+      setState(() => _isLoading = false);
       _showRightSnackBar(context,
           'Minimum amount required is 2000 for this scheme', Colors.red);
       return;
     }
 
-    setState(() => _isLoading = true);
-
     try {
-      final transactionProvider =
-          Provider.of<TransactionProvider>(context, listen: false);
-      final data = await transactionProvider.createDirect(_transaction, 0, 0);
+      await tokenGenarate(
+          amountCntrl.text, descriptionController.text, activeAc, _transaction);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              Icon(Icons.check_circle, color: Colors.white),
-              SizedBox(width: 8),
-              Text("Payment recorded successfully!"),
-            ],
-          ),
-          backgroundColor: Colors.green,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        ),
-      );
-
-      Navigator.of(context).pop(true);
+      // Navigator.of(context).pop(true);
     } catch (err) {
+      setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error saving payment: $err'),
@@ -995,15 +1086,20 @@ class _rightPanalProfileState extends State<RightPanalProfile>
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
       );
-    } finally {
-      setState(() => _isLoading = false);
     }
+    // finally {
+    //   setState(() => _isLoading = false);
+    // }
   }
 
   void _showRightSnackBar(
-      BuildContext context, String message, Color backgroundColor) {
+    BuildContext context,
+    String message,
+    Color backgroundColor,
+  ) {
     final screenWidth = MediaQuery.of(context).size.width;
-    final snackbarWidth = 400.0; // Fixed width for the snackbar
+    const snackbarWidth = 400.0; // Fixed width for the snackbar
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Container(
@@ -1017,259 +1113,22 @@ class _rightPanalProfileState extends State<RightPanalProfile>
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         margin: EdgeInsets.only(
-            left: MediaQuery.of(context).size.width * 0.7,
-            bottom: 16,
-            right: 16),
+          left: screenWidth * 0.7,
+          bottom: 16,
+          right: 16,
+        ),
+        duration: const Duration(seconds: 2), // ⏱️ Auto dismiss after 2 sec
       ),
-    );
-  }
-
-  void _showHistoryDialog(
-      BuildContext context, SchemeUserModel user, List txn) {
-    // print(transactions);
-
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (BuildContext context) {
-        return Dialog(
-          alignment: Alignment.centerRight,
-          insetPadding:
-              EdgeInsets.only(left: MediaQuery.of(context).size.width * 0.2),
-          child: Container(
-            height: MediaQuery.of(context).size.height * 0.8,
-            width: MediaQuery.of(context).size.width * 0.5,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 10,
-                  spreadRadius: 2,
-                ),
-              ],
-            ),
-            child: Column(
-              children: [
-                // Header
-                Container(
-                  padding: EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: TColo.primaryColor1.withOpacity(0.1),
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(16),
-                      topRight: Radius.circular(16),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.history,
-                        color: TColo.primaryColor1,
-                        size: 28,
-                      ),
-                      SizedBox(width: 12),
-                      Text(
-                        'Payment History',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: TColo.primaryColor1,
-                        ),
-                      ),
-                      Spacer(),
-                      if (txn.isNotEmpty)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: TColo.primaryColor1.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            '${txn.length} transactions',
-                            style: TextStyle(
-                              color: TColo.primaryColor1,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      IconButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        icon: Icon(
-                          Icons.close,
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                // Content
-
-                Expanded(
-                  child: txn.isNotEmpty
-                      ? ListView.builder(
-                          padding: EdgeInsets.all(16),
-                          itemCount: txn.length,
-                          itemBuilder: (context, index) {
-                            final tx = txn[index];
-                            final DateTime dateTime =
-                                (tx["date"] as Timestamp).toDate();
-                            return Container(
-                              margin: EdgeInsets.only(bottom: 12),
-                              padding: EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                color: Colors.grey[50],
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: Colors.grey[200]!,
-                                  width: 1,
-                                ),
-                              ),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    width: 8,
-                                    height: 8,
-                                    decoration: BoxDecoration(
-                                      color: tx["transactionType"] == 0
-                                          ? Colors.green
-                                          : Colors.red,
-                                      shape: BoxShape.circle,
-                                    ),
-                                  ),
-                                  SizedBox(width: 12),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          tx["note"],
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 16,
-                                            color: Colors.grey[800],
-                                          ),
-                                        ),
-                                        Text(
-                                          "Invoice No : ${tx["invoiceNo"]}",
-                                          style: TextStyle(
-                                            color: Colors.grey[600],
-                                            fontSize: 14,
-                                          ),
-                                        ),
-                                        SizedBox(height: 4),
-                                        Row(
-                                          children: [
-                                            Text(
-                                              'Amount :',
-                                              style: TextStyle(
-                                                color: Colors.grey[600],
-                                                fontSize: 14,
-                                              ),
-                                            ),
-                                            Text(
-                                              '₹ ${tx["amount"]}',
-                                              style: TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                color: Colors.grey[600],
-                                                fontSize: 14,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        SizedBox(height: 2),
-                                        Text(
-                                          'Date: ${dateTime.toLocal().toString().split(" ")[0]}',
-                                          style: TextStyle(
-                                            color: Colors.grey[500],
-                                            fontSize: 12,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  Container(
-                                    padding: EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 4,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: (tx["transactionType"] == 0
-                                              ? Colors.green
-                                              : Colors.red)
-                                          .withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Text(
-                                      tx["transactionType"] == 0
-                                          ? 'Recieved'
-                                          : 'Purchased',
-                                      style: TextStyle(
-                                        color: tx["transactionType"] == 0
-                                            ? Colors.green
-                                            : Colors.red,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
-                        )
-                      : Container(
-                          height: 120,
-                          child: Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  FontAwesomeIcons.receipt,
-                                  size: 32,
-                                  color: Colors.grey[400],
-                                ),
-                                const SizedBox(height: 12),
-                                Text(
-                                  'No transactions found',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: Colors.grey[600],
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                Text(
-                                  'Your transaction history will appear here',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey[500],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
     );
   }
 
   String environment = "PRODUCTION";
   String merchantId = "M23L8P15TXS00";
-  tokenGenarate(String amt, String note, SchemeUserModel user) async {
+  tokenGenarate(String amt, String note, SchemeUserModel user,
+      TransactionModel transactionData) async {
     var amount = double.parse(amt);
-    print(user.custId);
-    print(amount);
+
     try {
-      print("======");
       var data = phonePe_PaymentModel(
           merchantId: merchantId,
           custId: user.custId,
@@ -1281,180 +1140,137 @@ class _rightPanalProfileState extends State<RightPanalProfile>
           status: "Initaiated");
       print("---- --");
       print(data.toJson());
-      firebaseInsert(data, user);
+      await firebaseInsert(data, user, transactionData);
     } catch (e) {
       print('An error occurred: $e');
-      setState(() {
-        _isLoading = false;
-      });
     }
     // firebaseInsert(data);
   }
 
   String transactionId = "";
-  firebaseInsert(phonePe_PaymentModel data, SchemeUserModel user) {
+  // firebaseInsert(phonePe_PaymentModel data, SchemeUserModel user,
+  //     TransactionModel transaction) {
+  //   print(data.toJson());
+  //   var db = phonePe_Payment();
+  //   db.initiliase();
+  //   db.addTransaction(data, transaction, user).then((value) {
+  //     print("----payment data ----");
+  //     setState(() {
+  //       transactionId = value.toUpperCase();
+  //     });
+
+  //     final payload = {
+  //       "merchantOrderId": transactionId,
+  //       "amount": (1 * 100).toInt(),
+  //       "expireAfter": 1200,
+  //       "metaInfo": {},
+  //       "paymentFlow": {
+  //         "type": "PG_CHECKOUT",
+  //         "message": "Payment message used for collect requests",
+  //         "merchantUrls": {"redirectUrl": "https://meralda-gold-9ff64.web.app/"}
+  //       }
+  //     };
+  //     if (transactionId != "") {
+  //       PaymentService.processPaymentAndLaunch(payload);
+
+  //     } else {
+  //       // print("----- Firebase insert error----------");
+  //       setState(() {
+  //         _isLoading = false;
+  //       });
+  //     }
+  //   });
+  // }
+  firebaseInsert(
+    phonePe_PaymentModel data,
+    SchemeUserModel user,
+    TransactionModel transaction,
+  ) async {
     print(data.toJson());
     var db = phonePe_Payment();
     db.initiliase();
-    db.addTransaction(data).then((value) {
+
+    await db.addTransaction(data, transaction, user).then((value) async {
       print("----payment data ----");
       setState(() {
         transactionId = value.toUpperCase();
       });
-      print("----- Firebase insert ----------");
-      print(transactionId);
-      if (transactionId != "") {
-        getchecksum(transactionId, user);
+
+      final payload = {
+        "merchantOrderId": transactionId,
+        "amount": (1 * 100).toInt(),
+        "expireAfter": 1200,
+        "metaInfo": {},
+        "paymentFlow": {
+          "type": "PG_CHECKOUT",
+          "message": "Payment message used for collect requests",
+          // "merchantUrls": {"redirectUrl": "https://meralda-gold-9ff64.web.app/"}
+          "merchantUrls": {
+            "redirectUrl":
+                "https://meralda-gold-9ff64.web.app/?status=success&txnId=MRLD00123324"
+          }
+        }
+      };
+
+      if (transactionId.isNotEmpty) {
+        // _startTransactionListener(transactionId, user);
+        // 🚀 Launch Payment Page
+        // await PaymentService.processPaymentAndLaunch(
+        //     payload, user, transactionId);
+        await PaymentService.processPaymentAndLaunch(
+          payload,
+          user,
+          transactionId,
+          onPaymentCallback: (String response) {
+            print("Payment callback: $response");
+            if (response == 'USER_CANCEL' || response == 'CONCLUDED') {
+              setState(() => _isLoading = false);
+            }
+            if (response == 'USER_CANCEL') {
+              PaymentStatusDialog.screen(
+                status: "failed", // Use actual status from URL
+                txnId: transactionId, // Use actual txnId from URL
+              );
+              _showRightSnackBar(context, '❌ Payment cancelled', Colors.red);
+            } else if (response == 'CONCLUDED') {
+              _showRightSnackBar(context, '✅ Payment completed', Colors.green);
+            }
+          },
+        );
       } else {
-        // print("----- Firebase insert error----------");
-        setState(() {
-          _isLoading = false;
-        });
+        setState(() => _isLoading = false);
       }
     });
   }
 
-  String checksum = "";
-  String saltKey = "7e700076-d1da-48a3-b728-c9c318cceca2";
-  String saltIndex = "1";
-  String body = "";
-  getchecksum(String transId, SchemeUserModel user) {
-    final reqData = {
-      "merchantId": merchantId,
-      "merchantTransactionId": transId,
-      "merchantUserId": user.custId,
-      "amount": num.parse("1") * 100,
-      "mobileNumber": double.parse(user.phoneNo),
-      "callbackUrl":
-          "https://us-central1-malabari-jewellery.cloudfunctions.net/app/api/create",
-      "paymentInstrument": {
-        "type": "PAY_PAGE",
-      },
-    };
-    try {
-      setState(() {
-        String base64 = encodeJsonToBase64(reqData);
-        String input = base64 + "/pg/v1/pay" + saltKey;
-        checksum = "${convertToSHA256(input)}###${saltIndex}";
-        body = base64;
-      });
-      startTransaction(user, transId);
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
-    }
-  }
-
-  String callbackUrl =
-      "https://us-central1-malabari-jewellery.cloudfunctions.net/app/api/create";
   Object? result;
-  String packageName = "com.example.malabari_jewellery";
-  // void startTransaction(SchemeUserModel user, String transId) async {
-  //   try {
-  //     print("=======");
+  StreamSubscription<DocumentSnapshot>? _txnSub;
 
-  //     final data = await PhonePePaymentSdk.startTransaction(
-  //             body, callbackUrl, checksum, packageName)
-  //         .then((response) {
-  //       setState(() {
-  //         print("===== ===");
-  //         print(response);
-  //         if (response != null) {
-  //           String status = response['status'].toString();
-  //           String error = response['error'].toString();
-  //           print(status);
-  //           print(error);
-  //           setState(() {
-  //             _isLoading = false;
-  //           });
-  //           if (status == 'SUCCESS') {
-  //             result = "Flow Completed - Status: Success!";
-  //             isSuccess(user, transId);
-  //           } else {
-  //             isfaild(transId);
-  //             result = "Flow Completed - Status: $status and Error: $error";
-  //           }
-  //         } else {
-  //           print("------ ++++++++");
-  //           print(response);
-  //           result = "Flow Incomplete";
-  //         }
-  //       });
-  //     }).catchError((error) {
-  //       return <dynamic>{};
-  //     });
+  void _startTransactionListener(String transactionId, SchemeUserModel user) {
+    final docRef = FirebaseFirestore.instance
+        .collection('phonepe_transactions')
+        .doc(transactionId);
 
-  //     print("===   =====");
-  //     print(data);
-  //   } catch (error) {
-  //     setState(() {
-  //       _isLoading = false;
-  //     });
-  //     print(error);
-  //   }
-  // }
+    // cancel any old subscription
+    _txnSub?.cancel();
 
-  void startTransaction(SchemeUserModel user, String transId) async {
-    setState(() {
-      _isLoading = true;
+    _txnSub = docRef.snapshots().listen((snapshot) {
+      if (!snapshot.exists) return;
+      final status =
+          (snapshot.data() as Map<String, dynamic>?)?['status'] as String? ??
+              'PENDING';
+      print('Listener: txn $transactionId => $status');
+
+      if (status == 'PAYMENT_SUCCESS') {
+        _txnSub?.cancel();
+        isSuccess(user, transactionId);
+      } else if (status == 'PAYMENT_ERROR') {
+        _txnSub?.cancel();
+        isfaild(transactionId);
+      } // else keep waiting
+    }, onError: (err) {
+      print('Listener error: $err');
     });
-    try {
-      final authToken = await generateAuthToken();
-      if (authToken == null) {
-        result = "Failed to get auth token";
-        return;
-      }
-      await createPayment(authToken, transId);
-    } catch (e) {
-      print(e);
-    }
-    // try {
-    //   print("======= Starting PhonePe Transaction =======");
-
-    //   final response = await PhonePePaymentSdk.startTransaction(
-    //     body,
-    //     callbackUrl,
-    //     checksum,
-    //     packageName,
-    //   ).catchError((error) {
-    //     // Ensure same type is returned
-    //     print("Transaction error (catchError): $error");
-    //     return <String, dynamic>{
-    //       'status': 'FAILED',
-    //       'error': error.toString(),
-    //     };
-    //   });
-
-    //   print("===== Transaction Response =====");
-    //   print(response);
-
-    //   if (response != null) {
-    //     final status = response['status']?.toString() ?? "UNKNOWN";
-    //     final error = response['error']?.toString() ?? "NONE";
-
-    //     print("Status: $status");
-    //     print("Error: $error");
-
-    //     if (status == 'SUCCESS') {
-    //       result = "Flow Completed - Status: Success!";
-    //       isSuccess(user, transId);
-    //     } else {
-    //       result = "Flow Completed - Status: $status and Error: $error";
-    //       isfaild(transId);
-    //     }
-    //   } else {
-    //     print("------ Response is NULL ------");
-    //     result = "Flow Incomplete";
-    //   }
-    // } catch (e) {
-    //   print("Exception in startTransaction: $e");
-    //   result = "Exception occurred: $e";
-    // } finally {
-    //   setState(() {
-    //     _isLoading = false;
-    //   });
-    // }
   }
 
   isfaild(String transId) {
